@@ -1840,8 +1840,13 @@ function invModal(title,hint){
   <button type="button" id="ivm-global" class="btn btn-sm ${INV_GLOBAL?'btn-p':'btn-o'}" onclick="invSetMode(true)" style="flex:1">Montant global (forfait)</button>
  </div>
  <div id="iv-global-wrap" style="display:${INV_GLOBAL?'block':'none'}">
-  <input id="iv-gdesc" placeholder="Désignation de la prestation" value="${esc(INV_GLOBAL&&INV_LINES[0]?INV_LINES[0].label:'')}" oninput="invGlobalSync()">
-  <input id="iv-gamt" class="mt" type="number" min="0" style="margin-top:.5rem" placeholder="Montant global (${S.company.symbol})" value="${INV_GLOBAL&&INV_LINES[0]&&INV_LINES[0].pu?INV_LINES[0].pu:''}" oninput="invGlobalSync()">
+  <input id="iv-gdesc" placeholder="Désignation de la prestation" value="${esc(INV_GLOBAL&&INV_LINES[0]?INV_LINES[0].label:'')}" oninput="invGlobalSync('desc')">
+  <div class="fine" style="margin:.5rem 0 .2rem">Saisissez le <b>montant brut</b> OU le <b>net à payer</b> — l’autre se calcule automatiquement.</div>
+  <div class="grid2">
+   <div><label>Montant brut (${S.company.symbol})</label><input id="iv-gbrut" type="number" min="0" placeholder="Brut" value="${INV_GLOBAL&&INV_LINES[0]&&INV_LINES[0].pu?INV_LINES[0].pu:''}" oninput="invGlobalSync('brut')"></div>
+   <div><label>Net à payer (${S.company.symbol})</label><input id="iv-gnet" type="number" min="0" placeholder="Net" oninput="invGlobalSync('net')"></div>
+  </div>
+  <div class="fine" id="iv-gbrs" style="margin-top:.35rem"></div>
  </div>
  <div id="iv-detail-wrap" style="display:${INV_GLOBAL?'none':'block'}"><label>Prestations</label><div id="iv-lines"></div>
  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ligne libre</button>${S.services.length?`<button class="btn btn-o btn-sm" onclick="invAddForfait()">+ Depuis un forfait</button>`:''}</div></div>
@@ -1885,7 +1890,8 @@ function invoiceFromTx(txId){
 }
 function invSetMode(g){
  INV_GLOBAL=g;
- if(g){if(!INV_LINES.length)INV_LINES=[{label:'',qty:1,pu:0,serviceId:''}];else INV_LINES=[INV_LINES[0]];}
+ if(g){if(!INV_LINES.length)INV_LINES=[{label:'',qty:1,pu:0,serviceId:''}];else INV_LINES=[INV_LINES[0]];
+  setTimeout(()=>{const l=INV_LINES[0];if(l&&l.pu){const nb=document.getElementById('iv-gbrut');if(nb){nb.value=l.pu;invGlobalSync('brut');}}},30);}
  const gw=document.getElementById('iv-global-wrap'),dw=document.getElementById('iv-detail-wrap');
  if(gw)gw.style.display=g?'block':'none';
  if(dw)dw.style.display=g?'none':'block';
@@ -1894,10 +1900,22 @@ function invSetMode(g){
  if(!g)renderInvLines();
  invTotalPrev();
 }
-function invGlobalSync(){
+function invGlobalSync(src){
  const d=(document.getElementById('iv-gdesc')||{}).value||'';
- const a=+((document.getElementById('iv-gamt')||{}).value)||0;
- INV_LINES=[{label:d,qty:1,pu:a,serviceId:''}];
+ const brutEl=document.getElementById('iv-gbrut'),netEl=document.getElementById('iv-gnet');
+ let brut=+(brutEl&&brutEl.value)||0,net=+(netEl&&netEl.value)||0;
+ if(src==='net'){
+  // Net saisi → brut = net / (1 - taux)
+  brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;
+  if(brutEl)brutEl.value=brut||'';
+ }else if(src==='brut'){
+  net=brut>0?brut-Math.round(brut*BRS_RATE/100):0;
+  if(netEl)netEl.value=net||'';
+ }
+ const brs=Math.round(brut*BRS_RATE/100);
+ const g=document.getElementById('iv-gbrs');
+ if(g)g.innerHTML=brut>0?`Montant brut : <b>${fmt(brut)}</b> · BRS ${BRS_RATE}% : <b>${fmt(brs)}</b> · Net à payer : <b>${fmt(brut-brs)}</b>`:'';
+ INV_LINES=[{label:d,qty:1,pu:brut,serviceId:''}];
  invTotalPrev();
 }
 function invAddLine(){INV_LINES.push({label:'',qty:1,pu:0,serviceId:''});renderInvLines();}
@@ -2836,30 +2854,38 @@ async function invShare(id){
   }
  }catch(e){if(String(e).indexOf('AbortError')<0)toast('Partage annulé ou indisponible');}
 }
+function isMobileDevice(){return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');}
 async function invWhatsApp(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
  const t=invTotals(iv);
  const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
  const tel=(iv.phone||(c&&c.phone)||'').replace(/[^0-9]/g,'');
+ const telFull=tel?(tel.length<=9?'221'+tel:tel):'';
  const texte='Bonjour'+(iv.client?' '+iv.client:'')+',\n\nVeuillez trouver '+(iv.proforma?'notre devis':'votre facture')+' n°'+iv.num+' d\'un montant de '+fmt(t.net)+'.\n\n'+S.company.name+(S.company.tel?'\n'+S.company.tel:'');
- // 1) Tentative de partage natif AVEC le PDF attaché (mobile) — c'est la seule façon de joindre le fichier
- try{
-  const doc=invBuildPDF(iv);
-  if(doc){
-   const blob=doc.output('blob');
-   const file=new File([blob],String(iv.num)+'.pdf',{type:'application/pdf'});
-   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    await navigator.share({files:[file],title:(iv.proforma?'Devis ':'Facture ')+iv.num,text:texte});
-    log((iv.proforma?'Devis':'Facture')+' envoyé(e) via partage : '+iv.num);save();
-    return;
+ // ===== MOBILE : partage natif avec le PDF attaché (le fichier part, l'utilisateur choisit WhatsApp) =====
+ if(isMobileDevice()){
+  try{
+   const doc=invBuildPDF(iv);
+   if(doc){
+    const blob=doc.output('blob');
+    const file=new File([blob],String(iv.num)+'.pdf',{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+     await navigator.share({files:[file],title:(iv.proforma?'Devis ':'Facture ')+iv.num,text:texte});
+     log((iv.proforma?'Devis':'Facture')+' envoyé(e) via partage : '+iv.num);save();
+     return;
+    }
    }
-  }
- }catch(e){if(String(e).indexOf('AbortError')>=0)return;}
- // 2) Repli (ordinateur ou partage indisponible) : ouvrir WhatsApp avec le texte + télécharger le PDF à joindre
- const msg=encodeURIComponent(texte);
- const url=tel?('https://wa.me/'+(tel.length<=9?'221'+tel:tel)+'?text='+msg):('https://wa.me/?text='+msg);
+  }catch(e){if(String(e).indexOf('AbortError')>=0)return;}
+  // repli mobile si le partage échoue : conversation ciblée + PDF
+  const url=telFull?('https://wa.me/'+telFull+'?text='+encodeURIComponent(texte)):('https://wa.me/?text='+encodeURIComponent(texte));
+  window.open(url,'_blank');
+  setTimeout(()=>{invPDF(id);},400);
+  return;
+ }
+ // ===== ORDINATEUR : WhatsApp Web ne joint pas de fichier → ouvrir la conversation ciblée + télécharger le PDF =====
+ const url=telFull?('https://wa.me/'+telFull+'?text='+encodeURIComponent(texte)):('https://wa.me/?text='+encodeURIComponent(texte));
  window.open(url,'_blank');
- setTimeout(()=>{if(confirm('WhatsApp ne permet pas de joindre le fichier via un lien.\n\nTélécharger le PDF pour le glisser dans la conversation ?'))invPDF(id);},400);
+ setTimeout(()=>{if(confirm('Sur ordinateur, WhatsApp Web ne permet pas de joindre le fichier automatiquement.\n\nTélécharger le PDF pour le glisser dans la conversation ?'))invPDF(id);},400);
  log('Envoi WhatsApp préparé : '+iv.num);save();
 }
 function invPrint(id){
