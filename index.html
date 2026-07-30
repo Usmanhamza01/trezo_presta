@@ -1723,14 +1723,14 @@ function projView(id){
  ${[...invs].sort((a,b)=>b.date<a.date?-1:1).map(iv=>{const st=invStatus(iv);return `<tr><td><b>${esc(iv.num)}</b></td><td>${dateLabel(iv.date)}</td><td>${fmt(invTotals(iv).net)}</td><td>${fmt(invPaid(iv))}</td><td><span class="chip ${st==='paid'?'chip-g':st==='part'?'chip-a':'chip-r'}">${st==='paid'?'Payée':st==='part'?'Partielle':'Impayée'}</span></td></tr>`;}).join('')||'<tr><td colspan="5" class="fine">Aucune facture rattachée. Sélectionnez ce projet lors de la création d’une facture.</td></tr>'}</table></div>`);
 }
 function invTotals(iv){
- const htBrut=iv.lines.reduce((a,l)=>a+l.qty*l.pu,0);
+ const netSaisi=iv.lines.reduce((a,l)=>a+l.qty*l.pu,0);  /* montant saisi = NET voulu */
  let remise=0;
- if(iv.disc&&iv.disc.v>0)remise=iv.disc.t==='pct'?htBrut*Math.min(100,iv.disc.v)/100:Math.min(iv.disc.v,htBrut);
- const brut=htBrut-remise;                 /* montant brut (après remise éventuelle) */
- const brs=Math.round(brut*BRS_RATE/100);  /* retenue BRS 5% */
- const net=brut-brs;                        /* net à payer = ce que la cliente encaisse */
- /* alias de compatibilité : ht=brut imposable, tva=BRS, ttc=net encaissé */
- return{htBrut,remise,brut,brs,net,ht:brut,tva:brs,ttc:net};
+ if(iv.disc&&iv.disc.v>0)remise=iv.disc.t==='pct'?netSaisi*Math.min(100,iv.disc.v)/100:Math.min(iv.disc.v,netSaisi);
+ const net=netSaisi-remise;                              /* net à payer après remise éventuelle */
+ const brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;    /* brut (HT) reconstitué à l'envers */
+ const brs=brut-net;                                      /* BRS = brut - net */
+ /* htBrut/remise conservés pour l'affichage ; ht=brut (TOTAL HT), tva=BRS, ttc=net encaissé */
+ return{htBrut:netSaisi,remise,brut,brs,net,ht:brut,tva:brs,ttc:net};
 }
 function invPaid(iv){if(Array.isArray(iv.pays))return iv.pays.reduce((a,p)=>a+p.amount,0);return iv.paid?invTotals(iv).ttc:0;}
 function invStatus(iv){if(iv.proforma)return'pro';if(iv.cancelled)return'cancel';const t=invTotals(iv).ttc,r=invPaid(iv);if(r>=t-0.5)return'paid';if(r>0)return'part';return'unpaid';}
@@ -1853,24 +1853,16 @@ function invModal(title,hint){
   <button type="button" id="ivm-global" class="btn btn-sm ${INV_GLOBAL?'btn-p':'btn-o'}" onclick="invSetMode(true)" style="flex:1">Montant global (forfait)</button>
  </div>
  <div id="iv-global-wrap" style="display:${INV_GLOBAL?'block':'none'}">
-  <input id="iv-gdesc" placeholder="Désignation de la prestation" value="${esc(INV_GLOBAL&&INV_LINES[0]?INV_LINES[0].label:'')}" oninput="invGlobalSync('desc')">
-  <div class="fine" style="margin:.5rem 0 .2rem">Saisissez le <b>montant brut</b> OU le <b>net à payer</b> — l’autre se calcule automatiquement.</div>
-  <div class="grid2">
-   <div><label>Montant brut (${S.company.symbol})</label><input id="iv-gbrut" type="number" min="0" placeholder="Brut" value="${INV_GLOBAL&&INV_LINES[0]&&INV_LINES[0].pu?INV_LINES[0].pu:''}" oninput="invGlobalSync('brut')"></div>
-   <div><label>Net à payer (${S.company.symbol})</label><input id="iv-gnet" type="number" min="0" placeholder="Net" oninput="invGlobalSync('net')"></div>
-  </div>
+  <input id="iv-gdesc" placeholder="Désignation de la prestation" value="${esc(INV_GLOBAL&&INV_LINES[0]?INV_LINES[0].label:'')}" oninput="invGlobalSync()">
+  <label>Montant (${S.company.symbol})</label><input id="iv-gamt" type="number" min="0" placeholder="Montant à encaisser (net)" value="${INV_GLOBAL&&INV_LINES[0]&&INV_LINES[0].pu?INV_LINES[0].pu:''}" oninput="invGlobalSync()">
   <div class="fine" id="iv-gbrs" style="margin-top:.35rem"></div>
  </div>
  <div id="iv-detail-wrap" style="display:${INV_GLOBAL?'none':'block'}"><label>Prestations</label><div id="iv-lines"></div>
  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ligne libre</button>${S.services.length?`<button class="btn btn-o btn-sm" onclick="invAddForfait()">+ Depuis un forfait</button>`:''}</div></div>
  <div class="grid2"><div><label>Réduction commerciale</label><select id="iv-dt" onchange="invTotalPrev()"><option value="none">Aucune</option><option value="amt">Montant fixe (${S.company.symbol})</option><option value="pct">Pourcentage (%)</option></select></div><div><label>Valeur de la réduction</label><input id="iv-dv" type="number" min="0" value="0" oninput="invTotalPrev()"></div></div>
- <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Une <b>BRS de ${BRS_RATE} %</b> (retenue à la source) est appliquée automatiquement sur le montant brut. Le client retient cette part ; vous encaissez le <b>net</b>.</div>
+ <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Les montants saisis correspondent au <b>net à encaisser</b>. L’app calcule le TOTAL HT et la <b>BRS de ${BRS_RATE} %</b> pour la facture.</div>
  <div id="iv-total" class="mt" style="font-weight:800"></div>
- <details id="iv-netcible-box" style="margin-top:.5rem"><summary class="fine" style="cursor:pointer">💡 Calculer à partir d'un net souhaité</summary>
-  <div class="fine" style="margin:.4rem 0 .3rem">Vous savez combien vous voulez toucher net ? Saisissez-le, l'app vous donne le brut total à facturer.</div>
-  <input id="iv-netcible" type="number" min="0" placeholder="Net souhaité (${S.company.symbol})" oninput="invNetCible()">
-  <div class="fine" id="iv-netcible-out" style="margin-top:.35rem"></div>
- </details>
+ 
  ${INV_EDIT?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('edit')">Enregistrer les modifications</button>`:INV_FROM_TX?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('def')">Générer la facture</button>`:`<div class="grid2 mt"><button class="btn btn-o" onclick="saveInvoice('pro')">Devis</button><button class="btn btn-p" onclick="saveInvoice('def')">Facture Définitive</button></div>`}`);
  renderInvLines();
 }
@@ -1909,7 +1901,7 @@ function invoiceFromTx(txId){
 function invSetMode(g){
  INV_GLOBAL=g;
  if(g){if(!INV_LINES.length)INV_LINES=[{label:'',qty:1,pu:0,serviceId:''}];else INV_LINES=[INV_LINES[0]];
-  setTimeout(()=>{const l=INV_LINES[0];if(l&&l.pu){const nb=document.getElementById('iv-gbrut');if(nb){nb.value=l.pu;invGlobalSync('brut');}}},30);}
+  setTimeout(()=>{const l=INV_LINES[0];if(l&&l.pu){const nb=document.getElementById('iv-gamt');if(nb){nb.value=l.pu;invGlobalSync();}}},30);}
  const gw=document.getElementById('iv-global-wrap'),dw=document.getElementById('iv-detail-wrap');
  if(gw)gw.style.display=g?'block':'none';
  if(dw)dw.style.display=g?'none':'block';
@@ -1918,22 +1910,14 @@ function invSetMode(g){
  if(!g)renderInvLines();
  invTotalPrev();
 }
-function invGlobalSync(src){
+function invGlobalSync(){
  const d=(document.getElementById('iv-gdesc')||{}).value||'';
- const brutEl=document.getElementById('iv-gbrut'),netEl=document.getElementById('iv-gnet');
- let brut=+(brutEl&&brutEl.value)||0,net=+(netEl&&netEl.value)||0;
- if(src==='net'){
-  // Net saisi → brut = net / (1 - taux)
-  brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;
-  if(brutEl)brutEl.value=brut||'';
- }else if(src==='brut'){
-  net=brut>0?brut-Math.round(brut*BRS_RATE/100):0;
-  if(netEl)netEl.value=net||'';
- }
- const brs=Math.round(brut*BRS_RATE/100);
+ const net=+((document.getElementById('iv-gamt')||{}).value)||0;
+ const brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;
+ const brs=brut-net;
  const g=document.getElementById('iv-gbrs');
- if(g)g.innerHTML=brut>0?`Montant brut : <b>${fmt(brut)}</b> · BRS ${BRS_RATE}% : <b>${fmt(brs)}</b> · Net à payer : <b>${fmt(brut-brs)}</b>`:'';
- INV_LINES=[{label:d,qty:1,pu:brut,serviceId:''}];
+ if(g)g.innerHTML=net>0?`TOTAL HT : <b>${fmt(brut)}</b> · BRS ${BRS_RATE}% : <b>${fmt(brs)}</b> · Net : <b>${fmt(net)}</b>`:'';
+ INV_LINES=[{label:d,qty:1,pu:net,serviceId:''}];
  invTotalPrev();
 }
 function invAddLine(){INV_LINES.push({label:'',qty:1,pu:0,serviceId:''});renderInvLines();}
@@ -1960,7 +1944,7 @@ function renderInvLines(){
  <div style="border:1px solid var(--ligne);border-radius:10px;padding:.6rem;margin-bottom:.5rem">
   ${S.services.length?`<select onchange="invLineSrv(${i},this.value)"><option value="">— Ligne libre —</option>${S.services.map(s=>`<option value="${s.id}" ${l.serviceId===s.id?'selected':''}>${esc(s.name)} (${fmt(s.price)})</option>`).join('')}</select>`:''}
   <input class="mt" style="margin-top:.5rem" placeholder="Désignation de la prestation" value="${esc(l.label)}" oninput="INV_LINES[${i}].label=this.value">
-  <input class="mt" type="number" min="0" style="margin-top:.5rem" placeholder="Montant (${S.company.symbol})" value="${l.pu||''}" oninput="INV_LINES[${i}].qty=1;INV_LINES[${i}].pu=+this.value||0;invTotalPrev()">
+  <input class="mt" type="number" min="0" style="margin-top:.5rem" placeholder="Montant net (${S.company.symbol})" value="${l.pu||''}" oninput="INV_LINES[${i}].qty=1;INV_LINES[${i}].pu=+this.value||0;invTotalPrev()">
   ${INV_LINES.length>1?`<button class="btn btn-sm btn-d" style="margin-top:.5rem" onclick="invRmLine(${i})">Retirer</button>`:''}
  </div>`).join('');
  invTotalPrev();
@@ -1972,26 +1956,19 @@ function invLineProd(i,pid){
  renderInvLines();
 }
 function invTotalPrev(){
- const htB=INV_LINES.reduce((a,l)=>a+(l.qty||0)*(l.pu||0),0);
+ const netB=INV_LINES.reduce((a,l)=>a+(l.qty||0)*(l.pu||0),0);
  const dt=(document.getElementById('iv-dt')||{}).value||'none';
  const dv=+((document.getElementById('iv-dv')||{}).value)||0;
  let rem=0;
- if(dt==='pct'&&dv>0)rem=htB*Math.min(100,dv)/100;
- else if(dt==='amt'&&dv>0)rem=Math.min(dv,htB);
- const brut=htB-rem;
- const brs=Math.round(brut*BRS_RATE/100);
- const el=document.getElementById('iv-total');
- if(el)el.innerHTML=(rem>0?'Sous-total : '+fmt(htB)+' · Réduction : -'+fmt(rem)+(dt==='pct'?' ('+dv+' %)':'')+'<br>':'')+'Montant brut : '+fmt(brut)+'<br>BRS ('+BRS_RATE+' %) : -'+fmt(brs)+'<br><b>Net à payer : '+fmt(brut-brs)+'</b>';
-}
-/* Aide au calcul inverse en mode détaillé : à partir d'un net souhaité, donne le brut total à facturer */
-function invNetCible(){
- const net=+((document.getElementById('iv-netcible')||{}).value)||0;
- const out=document.getElementById('iv-netcible-out');if(!out)return;
- if(net<=0){out.innerHTML='';return;}
- const brut=Math.round(net/(1-BRS_RATE/100));
+ if(dt==='pct'&&dv>0)rem=netB*Math.min(100,dv)/100;
+ else if(dt==='amt'&&dv>0)rem=Math.min(dv,netB);
+ const net=netB-rem;
+ const brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;
  const brs=brut-net;
- out.innerHTML='Pour toucher <b>'+fmt(net)+'</b> net, facturez un brut de <b>'+fmt(brut)+'</b> (BRS '+fmt(brs)+'). Répartissez ce montant sur vos lignes.';
+ const el=document.getElementById('iv-total');
+ if(el)el.innerHTML=(rem>0?'Sous-total net : '+fmt(netB)+' · Réduction : -'+fmt(rem)+(dt==='pct'?' ('+dv+' %)':'')+'<br>':'')+'TOTAL HT : '+fmt(brut)+'<br>BRS ('+BRS_RATE+' %) : '+fmt(brs)+'<br><b>NET à payer : '+fmt(net)+'</b>';
 }
+
 function saveInvoice(kind){
  const client=document.getElementById('iv-client').value.trim();
  if(!client){toast('Nom du client requis');return;}
