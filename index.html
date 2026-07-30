@@ -182,30 +182,38 @@ body.readonly .ro-banner{display:block}
 @media print{body>*{display:none !important}#print-area{display:block !important}#print-area .inv-doc{box-shadow:none;border-radius:0;padding:0}}
 @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
 
-.inv-eve{background:#fff;color:#1a1a1a;padding:28px 30px;font-family:'Courier New',monospace;position:relative;overflow:hidden}
+.inv-eve{--ac:var(--brand,#0E5A45);background:#fff;color:#1c1c1c;padding:0;font-family:'Manrope','Helvetica Neue',sans-serif;position:relative;overflow:hidden;border-radius:4px}
+.inv-eve .inv-bar{height:8px;background:linear-gradient(90deg,var(--ac),color-mix(in srgb,var(--ac) 55%,#fff))}
+.inv-eve .inv-pad{padding:26px 30px}
 .inv-eve .inv-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);width:70%;max-width:340px;opacity:.05;pointer-events:none;z-index:0}
 .inv-eve>*{position:relative;z-index:1}
-.inv-eve .inv-title{font-size:1.7rem;font-weight:800;letter-spacing:.5px;font-family:Georgia,'Times New Roman',serif;color:var(--brand,#1a1a1a)}
-.inv-eve .inv-hr{border-top:1.5px solid #222;margin:.5rem 0 .9rem}
-.inv-eve .inv-topgrid{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
-.inv-eve .inv-line-strong{font-weight:700;font-size:.82rem;line-height:1.5}
-.inv-eve .inv-line-soft{font-size:.76rem;color:#333;line-height:1.5}
-.inv-eve .inv-logo{width:90px;height:90px;object-fit:contain;opacity:.9}
-.inv-eve .inv-att{font-weight:800;font-size:1rem;margin:1rem 0 .5rem;font-family:Georgia,serif}
-.inv-eve .inv-client{font-style:italic;margin-bottom:1rem}
-.inv-eve .inv-cli-name{font-weight:700;font-style:normal;font-size:.9rem}
-.inv-eve .inv-cli-sub{font-size:.78rem;color:#444}
-.inv-eve-table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.8rem}
-.inv-eve-table th{border:1px solid #222;padding:7px 9px;text-align:left;font-weight:700;background:#fafafa}
-.inv-eve-table td{border:1px solid #222;padding:9px;vertical-align:top}
+.inv-eve .inv-title{font-size:1.75rem;font-weight:800;letter-spacing:-.5px;color:var(--ac);line-height:1.1}
+.inv-eve .inv-sub{font-size:.72rem;color:#8a8a8a;font-weight:600;text-transform:uppercase;letter-spacing:2px;margin-top:2px}
+.inv-eve .inv-hr{border:0;border-top:1px solid #ece7de;margin:.7rem 0 1rem}
+.inv-eve .inv-topgrid{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-top:1rem}
+.inv-eve .inv-line-strong{font-weight:700;font-size:.82rem;line-height:1.55;color:#2a2a2a}
+.inv-eve .inv-line-soft{font-size:.76rem;color:#777;line-height:1.55}
+.inv-eve .inv-logo{width:78px;height:78px;object-fit:contain;border-radius:12px}
+.inv-eve .inv-att{font-weight:800;font-size:.7rem;letter-spacing:2px;color:var(--ac);margin:1.3rem 0 .5rem;text-transform:uppercase}
+.inv-eve .inv-client{background:color-mix(in srgb,var(--ac) 7%,#fff);border-left:3px solid var(--ac);border-radius:0 8px 8px 0;padding:.7rem .9rem;margin-bottom:1.2rem}
+.inv-eve .inv-cli-name{font-weight:800;font-size:.98rem;color:#1c1c1c}
+.inv-eve .inv-cli-sub{font-size:.78rem;color:#777;margin-top:2px}
+.inv-eve-table{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:.82rem}
+.inv-eve-table th{padding:9px 11px;text-align:left;font-weight:700;font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--ac)}
+.inv-eve-table th:first-child{border-radius:8px 0 0 0}.inv-eve-table th:last-child{border-radius:0 8px 0 0}
+.inv-eve-table td{padding:11px;border-bottom:1px solid #efeae1;vertical-align:top}
+.inv-eve-table tbody tr:nth-child(even){background:#faf8f4}
 .inv-eve-table .ar{text-align:right}.inv-eve-table .ce{text-align:center}
-.inv-eve-tot{margin:.6rem 0 .3rem;margin-left:auto;width:60%}
-.inv-eve-tot .row{display:flex;justify-content:space-between;font-size:.82rem;padding:.15rem 0}
-.inv-eve-tot .row.big{font-weight:800;font-size:.95rem;border-top:1px solid #222;margin-top:.2rem;padding-top:.35rem}
-.inv-arrete{margin-top:1rem;font-size:.72rem;font-style:italic;color:#333;border-top:1px dashed #bbb;padding-top:.5rem}
-.inv-eve .inv-cond{margin-top:.8rem;font-size:.72rem;color:#444}
-.inv-eve .inv-sign{margin-top:1.6rem;border-bottom:1px dotted #999;width:200px;margin-left:auto}
-.inv-eve-foot{margin-top:2rem;padding-top:.6rem;border-top:1.5px solid #222;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.72rem;color:#222}
+.inv-eve-tot{margin:1rem 0 .3rem;margin-left:auto;width:62%;max-width:280px}
+.inv-eve-tot .row{display:flex;justify-content:space-between;font-size:.83rem;padding:.28rem 0;color:#555}
+.inv-eve-tot .row b{color:#1c1c1c}
+.inv-eve-tot .row.big{font-weight:800;font-size:1.05rem;color:#fff;background:var(--ac);border-radius:10px;padding:.6rem .85rem;margin-top:.5rem}
+.inv-eve-tot .row.big span,.inv-eve-tot .row.big b{color:#fff}
+.inv-arrete{margin-top:1.2rem;font-size:.73rem;font-style:italic;color:#888;border-top:1px dashed #ddd;padding-top:.6rem}
+.inv-eve .inv-cond{margin-top:.9rem;font-size:.73rem;color:#666;background:#faf8f4;border-radius:8px;padding:.5rem .7rem}
+.inv-eve .inv-sign{margin-top:1.6rem;border-bottom:1px dotted #aaa;width:200px;margin-left:auto}
+.inv-eve-foot{margin-top:1.8rem;padding:.8rem 30px;background:var(--ac);color:#fff;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.72rem;font-weight:500}
+.inv-eve-foot span{opacity:.95}
 @media print{.inv-eve{padding:0}}
 
 </style>
@@ -1412,7 +1420,7 @@ function saveProd(id){
 }
 
 /* ===== Factures ===== */
-let INV_LINES=[],INV_FROM_TX=null,INV_DATE=null,INV_EDIT=null,INV_PROJ='',FFILT='all',FQ='',FMM='',FSORT='num',FDIR=-1;
+let INV_LINES=[],INV_FROM_TX=null,INV_DATE=null,INV_EDIT=null,INV_PROJ='',INV_GLOBAL=false,FFILT='all',FQ='',FMM='',FSORT='num',FDIR=-1;
 /* ===== Stock : tableau de bord & historique ===== */
 let STKTAB='prod';const CHS={};
 function stkTabs(){return `<div class="tabs"><button ${STKTAB==='prod'?'class="on"':`onclick="STKTAB='prod';R.stock()"`}>Produits</button><button ${STKTAB==='dash'?'class="on"':`onclick="STKTAB='dash';R.stock()"`}>Tableau de bord</button><button ${STKTAB==='hist'?'class="on"':`onclick="STKTAB='hist';R.stock()"`}>Historique</button></div>`;}
@@ -1826,8 +1834,17 @@ function invModal(title,hint){
  <label>Adresse du client (optionnel — enregistrée dans sa fiche)</label><input id="iv-addr">
  <div class="grid2"><div><label>Téléphone (optionnel)</label><input id="iv-tel"></div><div><label>Date</label><input id="iv-date" type="date" value="${INV_DATE||defDate()}"></div></div>
  ${S.projects.filter(p=>p.status!=="cancel").length?`<label>Projet (optionnel — pour le suivi par mission)</label><select id="iv-proj"><option value="">— Aucun —</option>${S.projects.filter(p=>p.status!=="cancel").map(p=>`<option value="${p.id}" ${INV_PROJ===p.id?"selected":""}>${esc(p.title)}</option>`).join("")}</select>`:""}
- <label>Prestations</label><div id="iv-lines"></div>
- <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ligne libre</button>${S.services.length?`<button class="btn btn-o btn-sm" onclick="invAddForfait()">+ Depuis un forfait</button>`:''}</div>
+ <label>Mode de facturation</label>
+ <div class="seg" style="display:flex;gap:.4rem;margin-bottom:.6rem">
+  <button type="button" id="ivm-detail" class="btn btn-sm ${INV_GLOBAL?'btn-o':'btn-p'}" onclick="invSetMode(false)" style="flex:1">Prestations détaillées</button>
+  <button type="button" id="ivm-global" class="btn btn-sm ${INV_GLOBAL?'btn-p':'btn-o'}" onclick="invSetMode(true)" style="flex:1">Montant global (forfait)</button>
+ </div>
+ <div id="iv-global-wrap" style="display:${INV_GLOBAL?'block':'none'}">
+  <input id="iv-gdesc" placeholder="Désignation de la prestation" value="${esc(INV_GLOBAL&&INV_LINES[0]?INV_LINES[0].label:'')}" oninput="invGlobalSync()">
+  <input id="iv-gamt" class="mt" type="number" min="0" style="margin-top:.5rem" placeholder="Montant global (${S.company.symbol})" value="${INV_GLOBAL&&INV_LINES[0]&&INV_LINES[0].pu?INV_LINES[0].pu:''}" oninput="invGlobalSync()">
+ </div>
+ <div id="iv-detail-wrap" style="display:${INV_GLOBAL?'none':'block'}"><label>Prestations</label><div id="iv-lines"></div>
+ <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ligne libre</button>${S.services.length?`<button class="btn btn-o btn-sm" onclick="invAddForfait()">+ Depuis un forfait</button>`:''}</div></div>
  <div class="grid2"><div><label>Réduction commerciale</label><select id="iv-dt" onchange="invTotalPrev()"><option value="none">Aucune</option><option value="amt">Montant fixe (${S.company.symbol})</option><option value="pct">Pourcentage (%)</option></select></div><div><label>Valeur de la réduction</label><input id="iv-dv" type="number" min="0" value="0" oninput="invTotalPrev()"></div></div>
  <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Une <b>BRS de ${BRS_RATE} %</b> (retenue à la source) est appliquée automatiquement sur le montant brut. Le client retient cette part ; vous encaissez le <b>net</b>.</div>
  <div id="iv-total" class="mt" style="font-weight:800"></div>
@@ -1852,7 +1869,7 @@ function invEdit(id){
  invTotalPrev();
 }
 function newInvoice(){
- INV_FROM_TX=null;INV_DATE=null;INV_EDIT=null;INV_PROJ='';
+ INV_FROM_TX=null;INV_DATE=null;INV_EDIT=null;INV_PROJ='';INV_GLOBAL=false;
  INV_LINES=[{label:'',qty:1,pu:0,productId:''}];
  invModal('Nouvelle facture','');
 }
@@ -1865,6 +1882,23 @@ function invoiceFromTx(txId){
  INV_FROM_TX=txId;INV_DATE=t.date;INV_EDIT=null;
  INV_LINES=[{label:t.desc||(p?p.name:t.cat),qty:qty,pu:Math.round(t.amount/qty),productId:''}];
  invModal('Facture depuis encaissement','La facture sera marquée <b>Payée</b> et liée à cet encaissement — aucun nouveau flux ni mouvement de stock ne sera créé.');
+}
+function invSetMode(g){
+ INV_GLOBAL=g;
+ if(g){if(!INV_LINES.length)INV_LINES=[{label:'',qty:1,pu:0,serviceId:''}];else INV_LINES=[INV_LINES[0]];}
+ const gw=document.getElementById('iv-global-wrap'),dw=document.getElementById('iv-detail-wrap');
+ if(gw)gw.style.display=g?'block':'none';
+ if(dw)dw.style.display=g?'none':'block';
+ document.getElementById('ivm-detail').className='btn btn-sm '+(g?'btn-o':'btn-p');
+ document.getElementById('ivm-global').className='btn btn-sm '+(g?'btn-p':'btn-o');
+ if(!g)renderInvLines();
+ invTotalPrev();
+}
+function invGlobalSync(){
+ const d=(document.getElementById('iv-gdesc')||{}).value||'';
+ const a=+((document.getElementById('iv-gamt')||{}).value)||0;
+ INV_LINES=[{label:d,qty:1,pu:a,serviceId:''}];
+ invTotalPrev();
 }
 function invAddLine(){INV_LINES.push({label:'',qty:1,pu:0,serviceId:''});renderInvLines();}
 function invAddForfait(){
@@ -2072,16 +2106,19 @@ function invBuildPDF(iv){
  const cliAddr=c&&c.address?c.address:'';const cliTel=iv.phone||(c&&c.phone)||'';
  const footTel=co.tel||'+221 77 695 07 36',footMail=co.email||'lesdouceursdeve@gmail.com',footSoc=co.social||'@lesdouceurs_deve';
  const doc=new window.jspdf.jsPDF();const W=210,M=16;
+ let BR=[14,90,69];try{const n=(co.color||'#0E5A45').replace('#','');BR=[parseInt(n.slice(0,2),16),parseInt(n.slice(2,4),16),parseInt(n.slice(4,6),16)];}catch(e){}
+ /* Barre de couleur en haut */
+ doc.setFillColor(BR[0],BR[1],BR[2]);doc.rect(0,0,W,6,'F');
  /* Filigrane logo en fond */
  if(co.logo){try{const wmW=120,wmH=120;doc.saveGraphicsState&&doc.saveGraphicsState();if(doc.setGState){doc.setGState(new doc.GState({opacity:0.05}));}doc.addImage(co.logo,'PNG',(W-wmW)/2,(297-wmH)/2,wmW,wmH);if(doc.setGState){doc.setGState(new doc.GState({opacity:1}));}doc.restoreGraphicsState&&doc.restoreGraphicsState();}catch(e){}}
  doc.setTextColor(20,20,20);
  /* Grand titre */
- doc.setFont('times','bold');doc.setFontSize(26);
- try{const n=(co.color||'#1a1a1a').replace('#','');doc.setTextColor(parseInt(n.slice(0,2),16),parseInt(n.slice(2,4),16),parseInt(n.slice(4,6),16));}catch(e){doc.setTextColor(26,26,26);}
- const title=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
- doc.text(title,M,26);
+ doc.setFont('helvetica','bold');doc.setFontSize(24);doc.setTextColor(BR[0],BR[1],BR[2]);
+ doc.text(iv.proforma?'DEVIS':'FACTURE',M,24);
+ doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(150,150,150);
+ if(co.name)doc.text(co.name.toUpperCase(),M,30);
  doc.setTextColor(20,20,20);
- doc.setDrawColor(34);doc.setLineWidth(.6);doc.line(M,31,W-M,31);
+ doc.setDrawColor(230,225,215);doc.setLineWidth(.4);doc.line(M,35,W-M,35);
  /* Bloc émetteur (gauche) + logo (droite) */
  doc.setFont('courier','bold');doc.setFontSize(10);doc.setTextColor(30);
  let y=40;
@@ -2107,21 +2144,22 @@ function invBuildPDF(iv){
  doc.autoTable({startY:y,
   head:[['DESCRIPTION','PRIX ('+co.symbol+')','QUANTITÉ','TOTAL']],
   body:iv.lines.map(l=>[l.label,pdfN(l.pu),String(l.qty),pdfN(l.qty*l.pu)]),
-  theme:'grid',
-  headStyles:{fillColor:[250,250,250],textColor:[20,20,20],fontStyle:'bold',lineColor:[34,34,34],lineWidth:.3},
-  bodyStyles:{lineColor:[34,34,34],lineWidth:.3,textColor:[20,20,20]},
+  theme:'striped',
+  headStyles:{fillColor:BR,textColor:[255,255,255],fontStyle:'bold',fontSize:8},
+  alternateRowStyles:{fillColor:[250,248,244]},
   columnStyles:{1:{halign:'right'},2:{halign:'center'},3:{halign:'right'}},
-  styles:{font:'courier',fontSize:9,cellPadding:3}});
+  styles:{font:'helvetica',fontSize:9,cellPadding:3.5,textColor:[30,30,30]}});
  y=doc.lastAutoTable.finalY+4;
  doc.setDrawColor(34);doc.line(M,y,W-M,y);y+=7;
  /* Totaux (alignés à droite) */
  const LX=120,RX=W-M;
- doc.setFont('courier','normal');doc.setFontSize(9.5);doc.setTextColor(20);
+ doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(90);
  if(t.remise>0){doc.text('RÉDUCTION :',LX,y);doc.text('-'+pdfN(t.remise)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
  doc.text('TOTAL HT :',LX,y);doc.text(pdfN(t.brut)+' '+co.symbol,RX,y,{align:'right'});y+=6;
  doc.text('BRS '+BRS_RATE+'% :',LX,y);doc.text(pdfN(t.brs)+' '+co.symbol,RX,y,{align:'right'});y+=7;
- doc.setFont('courier','bold');doc.setFontSize(11);
- doc.text('TOTAL TTC :',LX,y);doc.text(pdfN(t.net)+' '+co.symbol,RX,y,{align:'right'});y+=10;
+ y+=1;doc.setFillColor(BR[0],BR[1],BR[2]);doc.roundedRect(LX-4,y-5,RX-LX+8,10,2,2,'F');
+ doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+ doc.text('TOTAL TTC :',LX,y+1.5);doc.text(pdfN(t.net)+' '+co.symbol,RX,y+1.5,{align:'right'});doc.setTextColor(20,20,20);y+=12;
  /* Arrêté en lettres */
  doc.setFont('times','italic');doc.setFontSize(8.5);doc.setTextColor(60);
  const arrLines=doc.splitTextToSize(arrete(iv),W-2*M);
@@ -2135,12 +2173,12 @@ function invBuildPDF(iv){
   doc.setFont('courier','normal');doc.setFontSize(7.6);doc.setTextColor(70);
   doc.splitTextToSize(co.payCond,W-2*M).forEach(function(ln){doc.text(ln,M,y);y+=4.5;});
  }
- /* Pied de page fixe : tél · email · réseaux */
- doc.setDrawColor(34);doc.setLineWidth(.5);doc.line(M,285,W-M,285);
- doc.setFont('courier','normal');doc.setFontSize(8);doc.setTextColor(34);
- doc.text(String(footTel),M,290);
- doc.text(String(footMail),W/2,290,{align:'center'});
- doc.text(String(footSoc),W-M,290,{align:'right'});
+ /* Pied de page : bande colorée */
+ doc.setFillColor(BR[0],BR[1],BR[2]);doc.rect(0,283,W,14,'F');
+ doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(255,255,255);
+ doc.text(String(footTel),M,291);
+ doc.text(String(footMail),W/2,291,{align:'center'});
+ doc.text(String(footSoc),W-M,291,{align:'right'});
  return doc;
 }
 function invPDF(id){
@@ -2730,20 +2768,26 @@ function invDocHTML(iv){
  const footMail=co.email||'lesdouceursdeve@gmail.com';
  const docTitle=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
  const statusTag=invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':'';
- return `<div class="inv-doc inv-eve" style="--brand:${co.color||'#1a1a1a'}">
+ return `<div class="inv-doc inv-eve" style="--brand:${co.color||'#0E5A45'}">
+  <div class="inv-bar"></div>
   ${co.logo?`<img class="inv-wm" src="${co.logo}" alt="">`:''}
-  <div class="inv-title">${esc(docTitle)}${statusTag}</div>
+  <div class="inv-pad">
+  <div class="inv-topgrid">
+   <div><div class="inv-title">${iv.proforma?'DEVIS':'FACTURE'}</div><div class="inv-sub">${esc(co.name||'')}${statusTag}</div></div>
+   ${co.logo?`<img class="inv-logo" src="${co.logo}" alt="">`:''}
+  </div>
   <div class="inv-hr"></div>
   <div class="inv-topgrid">
-   <div class="inv-issuer">
-    <div class="inv-line-strong">${dateLabel(iv.date)}</div>
+   <div>
     <div class="inv-line-strong">${iv.proforma?'Devis':'Facture'} n°${esc(String(iv.num))}</div>
+    <div class="inv-line-soft">Date : ${dateLabel(iv.date)}</div>
+   </div>
+   <div style="text-align:right">
     ${co.address?`<div class="inv-line-strong">${esc(co.address)}</div>`:''}
-    ${co.tel?`<div class="inv-line-soft">Tél : ${esc(co.tel)}</div>`:''}
+    ${co.tel?`<div class="inv-line-soft">${esc(co.tel)}</div>`:''}
     ${co.email?`<div class="inv-line-soft">${esc(co.email)}</div>`:''}
     ${co.ninea||co.rccm?`<div class="inv-line-soft">${[co.ninea?'NINEA : '+co.ninea:'',co.rccm?'RCCM : '+co.rccm:''].filter(Boolean).join(' · ')}</div>`:''}
    </div>
-   ${co.logo?`<img class="inv-logo" src="${co.logo}" alt="">`:''}
   </div>
   <div class="inv-att">À L'ATTENTION DE</div>
   <div class="inv-client">
@@ -2763,9 +2807,10 @@ function invDocHTML(iv){
   ${invStatus(iv)==='part'?`<div class="inv-line-soft" style="text-align:right;margin-top:.3rem">Réglé : ${fmt(invPaid(iv))} · Reste dû : ${fmt(t.net-invPaid(iv))}</div>`:''}
   <div class="inv-arrete">${esc(arrete(iv))}</div>
   ${iv.proforma?`<div class="inv-cond">Devis valable 30 jours à compter de la date d'émission. Bon pour accord (date et signature) :</div><div class="inv-sign"></div>`:(S.company.payCond?`<div class="inv-cond">${esc(S.company.payCond)}</div>`:'')}
+  </div>
   <div class="inv-eve-foot">
-   <span>${esc(footTel)}</span>
-   <span>${esc(footMail)}</span>
+   <span>☎ ${esc(footTel)}</span>
+   <span>✉ ${esc(footMail)}</span>
    <span>${esc(socials)}</span>
   </div>
  </div>`;
@@ -2791,17 +2836,30 @@ async function invShare(id){
   }
  }catch(e){if(String(e).indexOf('AbortError')<0)toast('Partage annulé ou indisponible');}
 }
-function invWhatsApp(id){
+async function invWhatsApp(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
  const t=invTotals(iv);
  const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
  const tel=(iv.phone||(c&&c.phone)||'').replace(/[^0-9]/g,'');
- const doctype=iv.proforma?'devis':'la facture';
- const msg=encodeURIComponent('Bonjour'+(iv.client?' '+iv.client:'')+',\n\nVeuillez trouver '+(iv.proforma?'notre devis':'votre facture')+' n°'+iv.num+' d\'un montant de '+fmt(t.net)+'.\n\n'+S.company.name+(S.company.tel?'\n'+S.company.tel:''));
+ const texte='Bonjour'+(iv.client?' '+iv.client:'')+',\n\nVeuillez trouver '+(iv.proforma?'notre devis':'votre facture')+' n°'+iv.num+' d\'un montant de '+fmt(t.net)+'.\n\n'+S.company.name+(S.company.tel?'\n'+S.company.tel:'');
+ // 1) Tentative de partage natif AVEC le PDF attaché (mobile) — c'est la seule façon de joindre le fichier
+ try{
+  const doc=invBuildPDF(iv);
+  if(doc){
+   const blob=doc.output('blob');
+   const file=new File([blob],String(iv.num)+'.pdf',{type:'application/pdf'});
+   if(navigator.canShare&&navigator.canShare({files:[file]})){
+    await navigator.share({files:[file],title:(iv.proforma?'Devis ':'Facture ')+iv.num,text:texte});
+    log((iv.proforma?'Devis':'Facture')+' envoyé(e) via partage : '+iv.num);save();
+    return;
+   }
+  }
+ }catch(e){if(String(e).indexOf('AbortError')>=0)return;}
+ // 2) Repli (ordinateur ou partage indisponible) : ouvrir WhatsApp avec le texte + télécharger le PDF à joindre
+ const msg=encodeURIComponent(texte);
  const url=tel?('https://wa.me/'+(tel.length<=9?'221'+tel:tel)+'?text='+msg):('https://wa.me/?text='+msg);
  window.open(url,'_blank');
- // proposer aussi le PDF à joindre
- setTimeout(()=>{if(confirm('Le message WhatsApp est prêt. Télécharger aussi le PDF pour le joindre à la conversation ?'))invPDF(id);},400);
+ setTimeout(()=>{if(confirm('WhatsApp ne permet pas de joindre le fichier via un lien.\n\nTélécharger le PDF pour le glisser dans la conversation ?'))invPDF(id);},400);
  log('Envoi WhatsApp préparé : '+iv.num);save();
 }
 function invPrint(id){
