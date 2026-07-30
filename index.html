@@ -234,8 +234,8 @@ body.readonly .ro-banner{display:block}
 /* ===== Trezo Presta v1 — cœur ===== */
 const CONFIG=window.TREZO_CONFIG||{};
 const CURRENCIES=[["XOF","FCFA","Franc CFA (UEMOA)"],["XAF","FCFA","Franc CFA (CEMAC)"],["MAD","DH","Dirham marocain"],["TND","DT","Dinar tunisien"],["DZD","DA","Dinar algérien"],["EGP","E£","Livre égyptienne"],["NGN","₦","Naira nigérian"],["GHS","GH₵","Cedi ghanéen"],["KES","KSh","Shilling kényan"],["TZS","TSh","Shilling tanzanien"],["UGX","USh","Shilling ougandais"],["RWF","FRw","Franc rwandais"],["GNF","FG","Franc guinéen"],["CDF","FC","Franc congolais"],["MRU","UM","Ouguiya mauritanien"],["ZAR","R","Rand sud-africain"],["ETB","Br","Birr éthiopien"],["USD","$","Dollar US"],["EUR","€","Euro"]];
-const CAT_IN=["Ventes","Avance client","Prestations de services","Remboursement","Apport","Autre"];
-const CLI_CATS=["Ventes","Avance client","Prestations de services"];
+const CAT_IN=["Prestations de services","Avance client","Remboursement","Apport","Autre"];
+const CLI_CATS=["Prestations de services","Avance client"];
 const CAT_OUT=["Achats fournisseurs","Loyer","Salaires","Transport","Électricité & eau","Internet & téléphone","Impôts & taxes","Entretien","Autre",'Charges fixes'];
 const DEFAULT={v:2,company:{name:"",currency:"XOF",symbol:"FCFA",logo:null},license:null,products:[],services:[],projects:[],accounts:[],clients:[],charges:[],chgPays:[],exercises:[],stockMov:[],tx:[],employees:[],salPays:[],salAdv:[],goals:[],invoices:[],journal:[],settings:{pin:null,readOnly:false,invSeq:0}};
 const LOGO='data:image/svg+xml;utf8,'+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='#0E5A45'/><rect x='46' y='104' width='22' height='42' rx='6' fill='#F2B33D'/><rect x='78' y='84' width='22' height='62' rx='6' fill='#7FC8A9'/><rect x='110' y='58' width='22' height='88' rx='6' fill='#FFFFFF'/><rect x='38' y='36' width='116' height='16' rx='6' fill='#FFFFFF'/></svg>");
@@ -622,10 +622,16 @@ const accOf=x=>(x.acc&&S.accounts.some(a=>a.id===x.acc))?x.acc:(S.accounts[0]?S.
 const accName=id=>{const a=S.accounts.find(a=>a.id===id);return a?a.name:'Caisse';};
 const accBal=id=>S.tx.reduce((s,x)=>accOf(x)===id?s+(x.type==='in'?x.amount:-x.amount):s,0);
 const stockVal=b=>S.products.reduce((a,p)=>a+p.qty*((b==='achat'?(p.cost||p.price):(p.price||p.cost))||0),0);
+function caMoyen(){
+ const now=new Date();let tot=0,n=0;
+ for(let i=1;i<=3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  const v=S.tx.filter(t=>t.type==='in'&&t.date.slice(0,7)===m).reduce((a,t)=>a+t.amount,0);tot+=v;n++;}
+ return n?Math.round(tot/n):0;
+}
 function goalFor(m){
  const g=S.goals.find(x=>x.month===m);
  if(g)return g.target;
- if(S.settings.objMode==='auto')return Math.round(stockVal(S.settings.objBase||'vente')*(+S.settings.objCoef||100)/100)||null;
+ if(S.settings.objMode==='auto')return Math.round(caMoyen()*(+S.settings.objCoef||100)/100)||null;
  return null;
 }
 /* ===== Sélection multiple & import des factures ===== */
@@ -828,8 +834,8 @@ R.dash=function(){
  const goalT=goalFor(m);
  const low=[];
  const recent=[...S.tx].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
- const caM=S.tx.filter(x=>x.type==='in'&&x.cat==='Ventes'&&x.date.slice(0,7)===m).reduce((a,x)=>a+x.amount,0);
- const caY=S.tx.filter(x=>x.type==='in'&&x.cat==='Ventes'&&x.date.slice(0,4)===String(new Date().getFullYear())).reduce((a,x)=>a+x.amount,0);
+ const caM=S.tx.filter(x=>x.type==='in'&&x.cat==='Prestations de services'&&x.date.slice(0,7)===m).reduce((a,x)=>a+x.amount,0);
+ const caY=S.tx.filter(x=>x.type==='in'&&x.cat==='Prestations de services'&&x.date.slice(0,4)===String(new Date().getFullYear())).reduce((a,x)=>a+x.amount,0);
  document.getElementById('v-dash').innerHTML=`
  <div class="card hero">
   <div class="lbl">Solde de trésorerie</div>
@@ -872,7 +878,7 @@ function drawCharts(m){
  else document.getElementById('pie-empty').innerHTML='<div class="empty">Aucun décaissement ce mois-ci.</div>';
  const ms12=[];const _now=new Date();
  for(let i=11;i>=0;i--){const d=new Date(_now.getFullYear(),_now.getMonth()-i,1);ms12.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
- CH.ca=new Chart(document.getElementById('ch-ca'),{type:'line',data:{labels:ms12.map(x=>monthLabel(x).split(' ')[0]),datasets:[{label:'Chiffre d’affaires',data:ms12.map(x=>S.tx.filter(t=>t.type==='in'&&t.cat==='Ventes'&&t.date.slice(0,7)===x).reduce((a,t)=>a+t.amount,0)),borderColor:'#0E5A45',backgroundColor:'rgba(14,90,69,.12)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>NF.format(v)}}}}});
+ CH.ca=new Chart(document.getElementById('ch-ca'),{type:'line',data:{labels:ms12.map(x=>monthLabel(x).split(' ')[0]),datasets:[{label:'Chiffre d’affaires',data:ms12.map(x=>S.tx.filter(t=>t.type==='in'&&t.cat==='Prestations de services'&&t.date.slice(0,7)===x).reduce((a,t)=>a+t.amount,0)),borderColor:'#0E5A45',backgroundColor:'rgba(14,90,69,.12)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>NF.format(v)}}}}});
  const caP={};
  S.tx.filter(t=>t.type==='in'&&t.productId).forEach(t=>{const p=S.products.find(q=>q.id===t.productId);const nm=p?p.name:'(retiré)';caP[nm]=(caP[nm]||0)+t.amount;});
  S.invoices.filter(iv=>!iv.proforma&&!iv.cancelled).forEach(iv=>iv.lines.forEach(l=>{if(l.productId){const p=S.products.find(q=>q.id===l.productId);const nm=p?p.name:'(retiré)';caP[nm]=(caP[nm]||0)+l.qty*l.pu;}}));
@@ -1229,7 +1235,7 @@ R.obj=function(){
  const reste=Math.max(0,target-enc);
  const pc=target>0?Math.min(100,enc/target*100):0;
  const auto=S.settings.objMode==='auto';
- const sv=stockVal(S.settings.objBase||'vente');
+ const sv=caMoyen();
  const gs=[...S.goals].sort((a,b)=>b.month.localeCompare(a.month));
  document.getElementById('v-obj').innerHTML=`
  <div class="card hero">
@@ -1239,7 +1245,7 @@ R.obj=function(){
   <div class="hbars"><i style="height:26px;background:var(--ambre)"></i><i style="height:46px;background:var(--menthe)"></i><i style="height:66px;background:#fff"></i></div>
  </div>
  <div class="kgrid">
-  <div class="kpi"><div class="lbl">Valeur du stock (${(S.settings.objBase||'vente')==='achat'?'prix d’achat':'prix de vente'})</div><div class="val" style="font-size:1.02rem">${fmt(sv)}</div></div>
+  <div class="kpi"><div class="lbl">Chiffre d’affaires moyen (3 mois)</div><div class="val" style="font-size:1.02rem">${fmt(sv)}</div></div>
   <div class="kpi in"><div class="lbl">Déjà encaissé</div><div class="val" style="font-size:1.02rem">${fmt(enc)}</div></div>
   <div class="kpi out"><div class="lbl">Reste à encaisser</div><div class="val" style="font-size:1.02rem">${fmt(reste)}</div></div>
   <div class="kpi"><div class="lbl">Taux de réalisation</div><div class="val">${target?Math.round(enc/target*100):0} %</div><div class="pbar"><i class="${target>0&&enc>=target?'done':''}" style="width:${pc}%"></i></div></div>
@@ -1250,9 +1256,9 @@ R.obj=function(){
  </div>
  ${pilotHtml(m,target,enc)}
  <div class="card adm"><h3>Méthode de calcul de l’objectif</h3>
-  <label>Mode</label><select id="og-mode"><option value="manuel" ${!auto?'selected':''}>Manuel — je saisis mes objectifs</option><option value="auto" ${auto?'selected':''}>Automatique — basé sur la valeur du stock</option></select>
-  <div class="grid2"><div><label>Base de calcul</label><select id="og-base"><option value="vente" ${(S.settings.objBase||'vente')==='vente'?'selected':''}>Stock au prix de vente</option><option value="achat" ${S.settings.objBase==='achat'?'selected':''}>Stock au prix d’achat</option></select></div><div><label>Coefficient (%)</label><input id="og-coef" type="number" min="1" value="${+S.settings.objCoef||100}"></div></div>
-  <p class="fine">Objectif automatique = valeur du stock × coefficient. Il se recalcule instantanément à chaque vente, entrée ou sortie de stock — aucune saisie nécessaire. Un objectif manuel saisi pour un mois donné reste prioritaire.</p>
+  <label>Mode</label><select id="og-mode"><option value="manuel" ${!auto?'selected':''}>Manuel — je saisis mes objectifs</option><option value="auto" ${auto?'selected':''}>Automatique — basé sur le chiffre d’affaires moyen</option></select>
+  <label>Coefficient (%)</label><input id="og-coef" type="number" min="1" value="${+S.settings.objCoef||100}"><input type="hidden" id="og-base" value="vente">
+  <p class="fine">Objectif automatique = chiffre d’affaires moyen des 3 derniers mois × coefficient. Un coefficient de 110 % vise une progression de 10 %. Un objectif manuel saisi pour un mois donné reste prioritaire.</p>
   <button class="btn btn-p btn-full mt" onclick="saveObjCfg()">Enregistrer la méthode</button></div>
  <div class="card adm"><h3>Objectif manuel (prioritaire sur l’automatique)</h3>
   <div class="grid2"><div><label>Mois</label><input type="month" id="g-m" value="${curMonth()}"></div><div><label>Encaissements visés</label><input id="g-t" type="number" min="1"></div></div>
@@ -1968,7 +1974,7 @@ function invPayDo(id){
  }else{
   iv.pays.push({d:d,amount:amt,acc:pacc});
   iv.paid=invPaid(iv)>=t.ttc-0.5;
-  S.tx.push({id:uid(),type:'in',amount:amt,cat:'Ventes',desc:'Facture '+iv.num+' — '+iv.client+(iv.paid?'':' (acompte)'),date:d,acc:pacc,clientId:iv.clientId||null,ivId:iv.id,productId:null,qty:null});
+  S.tx.push({id:uid(),type:'in',amount:amt,cat:'Prestations de services',desc:'Facture '+iv.num+' — '+iv.client+(iv.paid?'':' (acompte)'),date:d,acc:pacc,clientId:iv.clientId||null,ivId:iv.id,productId:null,qty:null});
  }
  log('Encaissement facture '+iv.num+' ('+accName(pacc)+') : '+fmt(amt)+(iv.paid?' — facture soldée':' — reste dû '+fmt(Math.max(0,t.ttc-invPaid(iv)))));
  save();closeSheet('sheet-modal');if(R[CUR])R[CUR]();toast(iv.paid?'Facture soldée':'Acompte enregistré');
@@ -2825,7 +2831,7 @@ function payInvoiceFromFlux(ivId,amt,d,acc,cliId){
  if(!Array.isArray(iv.pays))iv.pays=iv.paid?[{d:iv.date,amount:t.ttc}]:[];
  iv.pays.push({d:d,amount:amt,acc:acc});
  iv.paid=(invPaid(iv)>=t.ttc-0.5);
- S.tx.push({id:uid(),type:'in',amount:amt,cat:'Ventes',desc:'Facture '+iv.num+' — '+iv.client+(iv.paid?'':' (acompte)'),date:d,acc:acc,clientId:cliId||iv.clientId||null,ivId:iv.id,productId:null,qty:null});
+ S.tx.push({id:uid(),type:'in',amount:amt,cat:'Prestations de services',desc:'Facture '+iv.num+' — '+iv.client+(iv.paid?'':' (acompte)'),date:d,acc:acc,clientId:cliId||iv.clientId||null,ivId:iv.id,productId:null,qty:null});
  log('Encaissement facture '+iv.num+' depuis les Flux ('+accName(acc)+') : '+fmt(amt)+(iv.paid?' — facture soldée':' — reste dû '+fmt(Math.max(0,t.ttc-invPaid(iv)))));
  save();R.flux();toast(iv.paid?'Facture '+iv.num+' soldée ✓':'Acompte enregistré — reste dû '+fmt(Math.max(0,t.ttc-invPaid(iv))));
 }
@@ -2855,6 +2861,7 @@ R.cli=function(){
   <button class="btn btn-p btn-full mt" onclick="cliAdd()">Ajouter le client</button>
   <div class="grid2 mt"><button class="btn btn-o btn-sm" onclick="cliImport()">Importer Excel / CSV</button><button class="btn btn-o btn-sm" onclick="cliExport()">Exporter Excel</button></div></div>
  <div class="card"><h2>Base clients <span id="cli-count" class="fine"></span></h2>
+  <div class="adm" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.3rem 0 .5rem"><label style="margin:0;text-transform:none;font-size:.8rem;display:flex;align-items:center;gap:.35rem"><input type="checkbox" style="width:auto" onchange="selCliAll(this.checked)"> Tout sélectionner</label><span class="fine" id="cli-selcount">${SELCLI.length?SELCLI.length+' sélectionné(s)':'Aucune sélection'}</span><button class="btn btn-sm btn-d act-del" onclick="bulkDelCli()">Supprimer la sélection</button></div>
   <input placeholder="Rechercher (nom, téléphone…)" value="${esc(CLIQ)}" oninput="CLIQ=this.value;renderCliList()" style="margin:.5rem 0 .8rem">
   <div class="grid2" style="margin-bottom:.6rem"><select onchange="CLIF_ST=this.value;renderCliList()"><option value="">Tous les clients</option><option value="due" ${CLIF_ST==='due'?'selected':''}>Avec solde restant dû</option><option value="ok" ${CLIF_ST==='ok'?'selected':''}>Soldés</option><option value="none" ${CLIF_ST==='none'?'selected':''}>Sans facture</option></select>
   <div class="grid2" style="gap:.4rem"><input type="date" title="Activité — du" value="${CLIF_D1}" onchange="CLIF_D1=this.value;renderCliList()"><input type="date" title="Activité — au" value="${CLIF_D2}" onchange="CLIF_D2=this.value;renderCliList()"></div></div>
@@ -2913,7 +2920,7 @@ function renderCliList(){
  document.getElementById('cli-count').textContent='('+list.length+')';
  el.innerHTML=list.map(c=>{
   const nb=S.invoices.filter(iv=>iv.clientId===c.id).length;
-  return `<div class="row"><div class="rmain"><div class="rt">${esc(cliFull(c))}</div><div class="rs">${esc(c.phone||'—')}${c.address?' · '+esc(c.address):''}${nb?' · '+nb+' facture(s)':''}</div></div><button class="btn btn-sm btn-o" onclick="cliView('${c.id}')">Suivi</button><button class="btn btn-sm btn-o adm act-edit" onclick="cliEdit('${c.id}')">Modifier</button><button class="btn btn-sm btn-d adm act-del" onclick="cliDel('${c.id}')">✕</button></div>`;
+  return `<div class="row"><input type="checkbox" class="adm" style="width:auto;margin-right:.5rem" ${SELCLI.indexOf(c.id)>=0?'checked':''} onchange="selCli('${c.id}',this.checked)"><div class="rmain"><div class="rt">${esc(cliFull(c))}</div><div class="rs">${esc(c.phone||'—')}${c.address?' · '+esc(c.address):''}${nb?' · '+nb+' facture(s)':''}</div></div><button class="btn btn-sm btn-o" onclick="cliView('${c.id}')">Suivi</button><button class="btn btn-sm btn-o adm act-edit" onclick="cliEdit('${c.id}')">Modifier</button><button class="btn btn-sm btn-d adm act-del" onclick="cliDel('${c.id}')">✕</button></div>`;
  }).join('')||'<div class="empty">Aucun client. Ajoutez-en un ou importez votre fichier Excel.</div>';
 }
 function cliAdd(){
@@ -2936,6 +2943,20 @@ function cliSave(id){
  const n=document.getElementById('ce-name').value.trim();if(!n){toast('Nom requis');return;}
  c.name=n;c.firstname=document.getElementById('ce-first').value.trim();c.phone=document.getElementById('ce-tel').value.trim();c.address=document.getElementById('ce-addr').value.trim();
  log('Client modifié : '+cliFull(c));save();closeSheet('sheet-modal');renderCliList();toast('Client modifié');
+}
+let SELCLI=[];
+function selCli(id,on){SELCLI=SELCLI.filter(x=>x!==id);if(on)SELCLI.push(id);const b=document.getElementById('cli-selcount');if(b)b.textContent=SELCLI.length?SELCLI.length+' sélectionné(s)':'Aucune sélection';}
+function selCliAll(on){SELCLI=on?cliListFiltered().map(c=>c.id):[];renderCliList();}
+function bulkDelCli(){
+ if(!SELCLI.length){toast('Sélectionnez d’abord des clients');return;}
+ const list=S.clients.filter(c=>SELCLI.indexOf(c.id)>=0);
+ const avecFact=list.filter(c=>S.invoices.some(iv=>iv.clientId===c.id));
+ let msg='Supprimer '+list.length+' client(s) de la base ?';
+ if(avecFact.length)msg+='\n\n'+avecFact.length+' d’entre eux ont des factures : elles seront conservées mais ne seront plus rattachées à une fiche client.';
+ if(!confirm(msg))return;
+ S.clients=S.clients.filter(c=>SELCLI.indexOf(c.id)<0);
+ log('Suppression multiple : '+list.length+' client(s)');
+ SELCLI=[];save();renderCliList();toast(list.length+' client(s) supprimé(s)');
 }
 function cliDel(id){
  const c=S.clients.find(x=>x.id===id);if(!c)return;
