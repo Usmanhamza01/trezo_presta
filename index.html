@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trezo Studio — Suivi d’activité (prestations)</title>
+<title>Trezo Presta — Gestion des prestations</title>
 <meta name="description" content="Gestion de trésorerie pour PME : encaissements, décaissements, salaires, stocks, factures.">
 <meta name="theme-color" content="#0E5A45">
 <link rel="manifest" href="manifest.webmanifest">
@@ -190,7 +190,7 @@ body.readonly .ro-banner{display:block}
 <header>
   <img class="hlogo" id="h-logo" alt="" src="icon-192.png">
   <div style="flex:1;min-width:0">
-    <div class="hname" id="h-name">Trezo</div>
+    <div class="hname" id="h-name">Trezo Presta</div>
     <div class="hsub"><span id="h-lic"></span><span id="h-sync"></span></div>
   </div>
   <button class="btn-lock" id="btn-refresh" title="Recharger les données depuis le cloud">⟳</button>
@@ -231,7 +231,7 @@ body.readonly .ro-banner{display:block}
 
 <script>
 'use strict';
-/* ===== Trezo Studio v1 — cœur ===== */
+/* ===== Trezo Presta v1 — cœur ===== */
 const CONFIG=window.TREZO_CONFIG||{};
 const CURRENCIES=[["XOF","FCFA","Franc CFA (UEMOA)"],["XAF","FCFA","Franc CFA (CEMAC)"],["MAD","DH","Dirham marocain"],["TND","DT","Dinar tunisien"],["DZD","DA","Dinar algérien"],["EGP","E£","Livre égyptienne"],["NGN","₦","Naira nigérian"],["GHS","GH₵","Cedi ghanéen"],["KES","KSh","Shilling kényan"],["TZS","TSh","Shilling tanzanien"],["UGX","USh","Shilling ougandais"],["RWF","FRw","Franc rwandais"],["GNF","FG","Franc guinéen"],["CDF","FC","Franc congolais"],["MRU","UM","Ouguiya mauritanien"],["ZAR","R","Rand sud-africain"],["ETB","Br","Birr éthiopien"],["USD","$","Dollar US"],["EUR","€","Euro"]];
 const CAT_IN=["Ventes","Avance client","Prestations de services","Remboursement","Apport","Autre"];
@@ -327,7 +327,7 @@ function renderNav(){
  const bottom=[["dash","Tableau"],["flux","Flux"],["fact","Factures"],["presta","Prestations"]];
  document.getElementById('bnav').innerHTML=bottom.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('')+'<button onclick="openSheet(\'sheet-plus\')">'+IC.plus+'Plus</button>';
  document.getElementById('plus-items').innerHTML=[["cli","Clients"],["proj","Projets"],["sal","Charges fixes"],["obj","Objectifs"],["jour","Journal"],["set","Réglages"]].filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button class="menu-it" onclick="closeSheet(\'sheet-plus\');go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
- document.getElementById('side').innerHTML='<div class="slogo"><img src="'+LOGO+'" alt="" style="width:34px;height:34px;border-radius:9px">Trezo</div>'+VIEWS.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
+ document.getElementById('side').innerHTML='<div class="slogo"><img src="'+LOGO+'" alt="" style="width:34px;height:34px;border-radius:9px">Trezo Presta</div>'+VIEWS.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
 }
 function go(v){CUR=v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));const el=document.getElementById('v-'+v);el.classList.add('on');document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
  const p=permOf(v);
@@ -338,7 +338,7 @@ function go(v){CUR=v;document.querySelectorAll('.view').forEach(x=>x.classList.r
 
 /* ===== En-tête + verrou lecture seule ===== */
 function renderHeader(){
- document.getElementById('h-name').textContent=S.company.name||'Trezo';
+ document.getElementById('h-name').textContent=S.company.name||'Trezo Presta';
  document.getElementById('h-logo').src=S.company.logo||LOGO;
  const d=licDaysLeft(),el=document.getElementById('h-lic');
  if(S.license)el.textContent=(S.license.trial?'Essai — ':'Licence — ')+(d>0?d+' j restants':'expirée');
@@ -372,14 +372,14 @@ document.getElementById('btn-refresh').onclick=async function(){
   setSync(' · ✓ synchronisé');toast('Données actualisées');
  }catch(e){setSync(' · hors ligne');toast('Actualisation impossible — vérifiez la connexion');}
 };
-document.getElementById('btn-logout').onclick=function(){if(confirm('Se déconnecter de Trezo ?'))cloudSignOut();};
+document.getElementById('btn-logout').onclick=function(){if(confirm('Se déconnecter de Trezo Presta ?'))cloudSignOut();};
 document.getElementById('hd-ex').onchange=function(){EXY=+this.value;renderExSel();if(R[CUR])R[CUR]();toast(exClosed(EXY)?'Exercice '+EXY+' (clôturé) — consultation en lecture seule':'Exercice '+EXY);};
 
 function permOf(v){if(MYROLE==='owner'||!PERMS||!PERMS.m)return't';return PERMS.m[v]||'t';}
 
 /* ===== Écrans d'accès ===== */
 let OB={products:[]};
-function obHTML(inner,step){return '<div class="ob-logo"><img src="'+LOGO+'" alt="" style="width:52px;height:52px;border-radius:14px"><div><div style="font-weight:800;font-size:1.5rem">Trezo Studio</div><div style="font-size:.85rem;opacity:.8">Votre trésorerie, synchronisée et sécurisée.</div></div></div><div class="steps">'+[0,1,2,3].map(i=>'<i class="'+(i<=step?'on':'')+'"></i>').join('')+'</div><div class="panel">'+inner+'</div>';}
+function obHTML(inner,step){return '<div class="ob-logo"><img src="'+LOGO+'" alt="" style="width:52px;height:52px;border-radius:14px"><div><div style="font-weight:800;font-size:1.5rem">Trezo Presta</div><div style="font-size:.85rem;opacity:.8">La gestion de vos prestations et projets</div></div></div><div class="steps">'+[0,1,2,3].map(i=>'<i class="'+(i<=step?'on':'')+'"></i>').join('')+'</div><div class="panel">'+inner+'</div>';}
 function obShow(inner,step){document.getElementById('ob').classList.add('open');document.getElementById('ob-body').innerHTML=obHTML(inner,step);}
 function authErr(e){
  const m=String((e&&e.message)||e||'');
@@ -395,7 +395,7 @@ function authErr(e){
  if(m.indexOf('not_owner')>=0)return 'Action réservée à l’administrateur.';
  if(m.indexOf('cannot_edit_owner')>=0)return 'Le compte administrateur ne peut pas être modifié.';
  if(m.indexOf('read_only_profile')>=0)return 'Votre profil est en lecture seule.';
- if(m.indexOf('suspended')>=0)return 'Licence suspendue — contactez votre fournisseur Trezo.';
+ if(m.indexOf('suspended')>=0)return 'Licence suspendue — contactez votre fournisseur Trezo Presta.';
  if(m.indexOf('Failed to fetch')>=0||m.indexOf('NetworkError')>=0)return 'Connexion Internet requise — vérifiez votre réseau.';
  return 'Erreur : '+m;
 }
@@ -548,14 +548,8 @@ function obStep2(){
  <h2>Personnalisation</h2>
  <label>Logo (optionnel)</label>
  <div style="display:flex;gap:.8rem;align-items:center"><img id="ob-logo-prev" src="${OB.logo||LOGO}" style="width:54px;height:54px;border-radius:12px;border:1px solid var(--ligne);object-fit:cover" alt=""><input type="file" accept="image/*" onchange="obLogo(this)"></div>
- <label>Produits / services vendus</label>
- <input id="ob-p-name" placeholder="Nom (ex. : Sac de riz 50 kg)">
- <div class="grid2 mt"><input id="ob-p-price" type="number" min="0" placeholder="Prix de vente"><input id="ob-p-qty" type="number" min="0" placeholder="Stock initial"></div>
- <button class="btn btn-a btn-full mt" onclick="obAddP()">+ Ajouter ce produit</button>
- <div class="plist" id="ob-plist"></div>
- <p class="fine mt">Vous pourrez créer vos prestations plus tard dans l’onglet Prestations.</p>
+ <p class="fine mt">Vous pourrez créer vos prestations (services + tarifs) et vos projets après la configuration, depuis les onglets dédiés.</p>
  <button class="btn btn-p btn-full mt" onclick="obFinish()">Terminer la configuration</button>`,3);
- obRenderP();
 }
 function obLogo(inp){const f=inp.files[0];if(!f)return;resizeImg(f,url=>{OB.logo=url;document.getElementById('ob-logo-prev').src=url;});}
 function resizeImg(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const s=Math.min(img.width,img.height);c.width=256;c.height=256;c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,256,256);cb(c.toDataURL('image/png'));};img.src=e.target.result;};r.readAsDataURL(file);}
@@ -572,7 +566,7 @@ function obFinish(){
  S.products=OB.products;S.company.logo=OB.logo||null;
  S.accounts=[{id:'a_caisse',name:'Caisse'},{id:'a_banque',name:'Banque'},{id:'a_om',name:'Orange Money'},{id:'a_wave',name:'Wave'}];
  S.settings.invPrefix=initialsOf(S.company.name);
- log('Espace Trezo Studio configuré pour '+S.company.name);
+ log('Espace Trezo Presta configuré pour '+S.company.name);
  save();
  document.getElementById('ob').classList.remove('open');
  initApp();
@@ -926,16 +920,7 @@ function renderFluxList(){
   ?list.slice(0,200).map(x=>txRow(x,true)).join('')+(list.length>200?'<div class="empty">… '+(list.length-200)+' opérations plus anciennes — affinez la recherche.</div>':'')
   :'<div class="empty">'+((q||FLUX_M)?'Aucune opération ne correspond à ces filtres.':'Aucune opération pour le moment.')+'</div>';
 }
-function fluxProd(){
- const sel=document.getElementById('f-prod');if(!sel)return;
- const w=document.getElementById('f-qty-wrap');
- const p=S.products.find(x=>x.id===sel.value);
- if(!p){w.style.display='none';return;}
- w.style.display='block';
- const q=+document.getElementById('f-qty').value||1;
- document.getElementById('f-amt').value=p.price*q;
- document.getElementById('f-cat').value='Ventes';
-}
+function fluxProd(){}
 function addTx(){
  const amt=+document.getElementById('f-amt').value;
  if(!amt||amt<=0){toast('Entrez un montant valide');return;}
@@ -1699,7 +1684,7 @@ function invStatus(iv){if(iv.proforma)return'pro';if(iv.cancelled)return'cancel'
 R.fact=function(){
  document.getElementById('v-fact').innerHTML=`
  <button class="btn btn-p btn-full adm" onclick="newInvoice()" style="margin-bottom:1rem">+ Nouvelle facture</button>
- <div class="tabs"><button class="${FFILT==='all'?'on':''}" onclick="setFFILT('all')">Toutes</button><button class="${FFILT==='paid'?'on':''}" onclick="setFFILT('paid')">Payées</button><button class="${FFILT==='part'?'on':''}" onclick="setFFILT('part')">Partielles</button><button class="${FFILT==='unpaid'?'on':''}" onclick="setFFILT('unpaid')">Impayées</button><button class="${FFILT==='pro'?'on':''}" onclick="setFFILT('pro')">Pro forma</button><button class="${FFILT==='cancel'?'on':''}" onclick="setFFILT('cancel')">Annulées</button></div>
+ <div class="tabs"><button class="${FFILT==='all'?'on':''}" onclick="setFFILT('all')">Toutes</button><button class="${FFILT==='paid'?'on':''}" onclick="setFFILT('paid')">Payées</button><button class="${FFILT==='part'?'on':''}" onclick="setFFILT('part')">Partielles</button><button class="${FFILT==='unpaid'?'on':''}" onclick="setFFILT('unpaid')">Impayées</button><button class="${FFILT==='pro'?'on':''}" onclick="setFFILT('pro')">Devis</button><button class="${FFILT==='cancel'?'on':''}" onclick="setFFILT('cancel')">Annulées</button></div>
  <div class="card"><h2>Suivi des factures &amp; créances clients</h2>
   <div class="grid2" style="margin:.6rem 0 .7rem"><input placeholder="Rechercher (client, n° facture…)" value="${esc(FQ)}" oninput="FQ=this.value;renderFactTable()"><input type="month" value="${FMM}" onchange="FMM=this.value;renderFactTable()"></div>
   <div class="grid2" style="margin-bottom:.6rem"><input type="date" title="Date de facture — du" value="${FD1}" onchange="FD1=this.value;renderFactTable()"><input type="date" title="Date de facture — au" value="${FD2}" onchange="FD2=this.value;renderFactTable()"></div>
@@ -1745,7 +1730,7 @@ function renderFactTable(){
  const rows=list.map(iv=>{
   const t=invTotals(iv),reg=invPaid(iv),sol=Math.max(0,t.ttc-reg),st=invStatus(iv);
   if(st!=='cancel'&&st!=='pro'){tT+=t.ttc;tR+=reg;}
-  const chip=st==='pro'?'<span class="chip" style="background:#E8F0FB;color:#2456A6">Pro forma</span>':st==='cancel'?'<span class="chip" style="background:#ECE8DE;color:#8a8578">Annulée</span>':st==='paid'?'<span class="chip chip-g">Payée</span>':st==='part'?'<span class="chip chip-a">Partielle</span>':'<span class="chip chip-r">Impayée</span>';
+  const chip=st==='pro'?'<span class="chip" style="background:#E8F0FB;color:#2456A6">Devis</span>':st==='cancel'?'<span class="chip" style="background:#ECE8DE;color:#8a8578">Annulée</span>':st==='paid'?'<span class="chip chip-g">Payée</span>':st==='part'?'<span class="chip chip-a">Partielle</span>':'<span class="chip chip-r">Impayée</span>';
   return `<tr><td class="adm"><input type="checkbox" style="width:auto" ${SELIV.indexOf(iv.id)>=0?'checked':''} onchange="selInv('${iv.id}',this.checked)"></td><td><b>${esc(iv.num)}</b></td><td>${dateLabel(iv.date)}</td><td>${esc(iv.client)}</td><td style="text-align:right">${NF.format(t.ttc)}</td><td style="text-align:right">${NF.format(reg)}</td><td style="text-align:right;font-weight:800;color:${sol>0?'var(--rouge)':'var(--vert)'}">${NF.format(sol)}</td><td>${chip}</td><td style="white-space:nowrap"><button class="btn btn-sm btn-o" onclick="invPreview('${iv.id}')">Aperçu</button> ${st==='pro'?`<button class="btn btn-sm btn-p adm" onclick="proToDef('${iv.id}')">→ Définitive</button>`:''} ${st!=='cancel'&&st!=='pro'&&sol>0?`<button class="btn btn-sm btn-p adm" onclick="invPayOpen('${iv.id}')">Encaisser</button>`:''} ${(st!=='cancel'&&reg<=0)?`<button class="btn btn-sm btn-o adm act-edit" onclick="invEdit('${iv.id}')">Modifier</button>`:''} ${(st==='pro'||(st!=='cancel'&&reg<=0))?`<button class="btn btn-sm btn-d adm act-del" onclick="invDel('${iv.id}')">Supprimer</button>`:''} ${st!=='cancel'&&st!=='pro'&&reg>0?`<button class="btn btn-sm btn-d adm act-del" onclick="invCancelOpen('${iv.id}')">Annuler</button>`:''}</td></tr>`;
  }).join('');
  document.getElementById('fact-tot').innerHTML='<b>'+list.length+'</b> facture(s) — Total TTC : <b>'+fmt(tT)+'</b> · Réglé : <b>'+fmt(tR)+'</b> · Reste dû : <b style="color:'+(tT-tR>0.5?'var(--rouge)':'var(--vert)')+'">'+fmt(Math.max(0,tT-tR))+'</b>';
@@ -1814,7 +1799,7 @@ function invModal(title,hint){
  <div class="grid2"><div><label>Réduction commerciale</label><select id="iv-dt" onchange="invTotalPrev()"><option value="none">Aucune</option><option value="amt">Montant fixe (${S.company.symbol})</option><option value="pct">Pourcentage (%)</option></select></div><div><label>Valeur de la réduction</label><input id="iv-dv" type="number" min="0" value="0" oninput="invTotalPrev()"></div></div>
  <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Une <b>BRS de ${BRS_RATE} %</b> (retenue à la source) est appliquée automatiquement sur le montant brut. Le client retient cette part ; vous encaissez le <b>net</b>.</div>
  <div id="iv-total" class="mt" style="font-weight:800"></div>
- ${INV_EDIT?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('edit')">Enregistrer les modifications</button>`:INV_FROM_TX?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('def')">Générer la facture</button>`:`<div class="grid2 mt"><button class="btn btn-o" onclick="saveInvoice('pro')">Facture Pro forma</button><button class="btn btn-p" onclick="saveInvoice('def')">Facture Définitive</button></div>`}`);
+ ${INV_EDIT?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('edit')">Enregistrer les modifications</button>`:INV_FROM_TX?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('def')">Générer la facture</button>`:`<div class="grid2 mt"><button class="btn btn-o" onclick="saveInvoice('pro')">Devis</button><button class="btn btn-p" onclick="saveInvoice('def')">Facture Définitive</button></div>`}`);
  renderInvLines();
 }
 function invEdit(id){
@@ -1824,13 +1809,13 @@ function invEdit(id){
  if(exGuard(iv.date))return;
  INV_FROM_TX=null;INV_EDIT=id;INV_DATE=iv.date;INV_PROJ=iv.projectId||'';
  INV_LINES=iv.lines.map(l=>({label:l.label,qty:l.qty,pu:l.pu,productId:l.productId||''}));
- invModal((iv.proforma?'Modifier la pro forma ':'Modifier la facture ')+iv.num,'Le numéro de pièce <b>'+esc(iv.num)+'</b> est conservé. Les quantités déjà retirées du stock sont recalculées automatiquement.');
+ invModal((iv.proforma?'Modifier le devis ':'Modifier la facture ')+iv.num,'Le numéro de pièce <b>'+esc(iv.num)+'</b> est conservé. Les quantités déjà retirées du stock sont recalculées automatiquement.');
  const set=(k,v)=>{const el=document.getElementById(k);if(el)el.value=v;};
  set('iv-client',iv.client);
  set('iv-tel',iv.phone||'');
  const cli=S.clients.find(c=>c.id===iv.clientId);
  set('iv-addr',cli?(cli.address||''):'');
- set('iv-tva',iv.tva||0);
+ /* BRS : pas de TVA */
  if(iv.disc&&iv.disc.v>0){set('iv-dt',iv.disc.t);set('iv-dv',iv.disc.v);}
  invTotalPrev();
 }
@@ -1850,14 +1835,15 @@ function invoiceFromTx(txId){
  invModal('Facture depuis encaissement','La facture sera marquée <b>Payée</b> et liée à cet encaissement — aucun nouveau flux ni mouvement de stock ne sera créé.');
 }
 function invAddLine(){INV_LINES.push({label:'',qty:1,pu:0,serviceId:''});renderInvLines();}
-function invLineSrv(i,sid){const s=S.services.find(x=>x.id===sid);if(!s){INV_LINES[i].serviceId='';renderInvLines();return;}INV_LINES[i]={label:s.name,qty:INV_LINES[i].qty||1,pu:s.price,serviceId:s.id};renderInvLines();}
+/* prestations : qty toujours 1, le montant = pu */
+function invLineSrv(i,sid){const s=S.services.find(x=>x.id===sid);if(!s){INV_LINES[i].serviceId='';renderInvLines();return;}INV_LINES[i]={label:s.name,qty:1,pu:s.price,serviceId:s.id};renderInvLines();}
 function invRmLine(i){INV_LINES.splice(i,1);renderInvLines();}
 function renderInvLines(){
  document.getElementById('iv-lines').innerHTML=INV_LINES.map((l,i)=>`
  <div style="border:1px solid var(--ligne);border-radius:10px;padding:.6rem;margin-bottom:.5rem">
   ${S.services.length?`<select onchange="invLineSrv(${i},this.value)"><option value="">— Ligne libre —</option>${S.services.map(s=>`<option value="${s.id}" ${l.serviceId===s.id?'selected':''}>${esc(s.name)} (${fmt(s.price)})</option>`).join('')}</select>`:''}
-  <input class="mt" style="margin-top:.5rem" placeholder="Désignation" value="${esc(l.label)}" oninput="INV_LINES[${i}].label=this.value">
-  <div class="grid2" style="margin-top:.5rem"><input type="number" min="1" placeholder="Qté" value="${l.qty}" oninput="INV_LINES[${i}].qty=+this.value||1;invTotalPrev()"><input type="number" min="0" placeholder="Prix unitaire" value="${l.pu||''}" oninput="INV_LINES[${i}].pu=+this.value||0;invTotalPrev()"></div>
+  <input class="mt" style="margin-top:.5rem" placeholder="Désignation de la prestation" value="${esc(l.label)}" oninput="INV_LINES[${i}].label=this.value">
+  <input class="mt" type="number" min="0" style="margin-top:.5rem" placeholder="Montant (${S.company.symbol})" value="${l.pu||''}" oninput="INV_LINES[${i}].qty=1;INV_LINES[${i}].pu=+this.value||0;invTotalPrev()">
   ${INV_LINES.length>1?`<button class="btn btn-sm btn-d" style="margin-top:.5rem" onclick="invRmLine(${i})">Retirer</button>`:''}
  </div>`).join('');
  invTotalPrev();
@@ -1906,7 +1892,7 @@ function saveInvoice(kind){
   old.phone=document.getElementById('iv-tel').value.trim();
   old.date=document.getElementById('iv-date').value||old.date;
   old.lines=lines;
-  old.tva=+document.getElementById('iv-tva').value||0;
+  old.tva=0;
   old.disc=(function(){const dt=(document.getElementById('iv-dt')||{}).value||'none';const dv=+((document.getElementById('iv-dv')||{}).value)||0;return(dt!=='none'&&dv>0)?{t:dt,v:dv}:null;})();
   if(!old.proforma)lines.forEach(l=>{if(l.productId){const p=S.products.find(x=>x.id===l.productId);if(p){p.qty=Math.max(0,p.qty-l.qty);smov(p.id,'out',l.qty,l.pu||0,'Modification facture '+old.num);}}});
   const t1=invTotals(old);
@@ -1925,21 +1911,21 @@ function saveInvoice(kind){
  if(proforma){
   S.settings.proSeqY=S.settings.proSeqY||{};
   const nextP=(S.settings.proSeqY[exYear]||0)+1;S.settings.proSeqY[exYear]=nextP;
-  num=pfx+'-PF-'+exYear+'-'+String(nextP).padStart(3,'0');
+  num=pfx+'-DEV-'+exYear+'-'+String(nextP).padStart(3,'0');
  }else{
   S.settings.seqY=S.settings.seqY||{};
   const nextN=(S.settings.seqY[exYear]||0)+1;S.settings.seqY[exYear]=nextN;
   num=pfx+'-'+exYear+'-'+String(nextN).padStart(3,'0');
  }
- const iv={id:uid(),num,client,clientId:cli.id,projectId:(document.getElementById('iv-proj')||{}).value||null,phone:document.getElementById('iv-tel').value.trim(),date:ivDate,lines,tva:+document.getElementById('iv-tva').value||0,disc:(function(){const dt=(document.getElementById('iv-dt')||{}).value||'none';const dv=+((document.getElementById('iv-dv')||{}).value)||0;return(dt!=='none'&&dv>0)?{t:dt,v:dv}:null;})(),paid:!!fromTx,proforma:proforma};
+ const iv={id:uid(),num,client,clientId:cli.id,projectId:(document.getElementById('iv-proj')||{}).value||null,phone:document.getElementById('iv-tel').value.trim(),date:ivDate,lines,tva:0,disc:(function(){const dt=(document.getElementById('iv-dt')||{}).value||'none';const dv=+((document.getElementById('iv-dv')||{}).value)||0;return(dt!=='none'&&dv>0)?{t:dt,v:dv}:null;})(),paid:!!fromTx,proforma:proforma};
  if(fromTx)iv.pays=[{d:iv.date,amount:invTotals(iv).ttc}];
  if(!fromTx&&!proforma)lines.forEach(l=>{if(l.productId){const p=S.products.find(x=>x.id===l.productId);if(p){p.qty=Math.max(0,p.qty-l.qty);smov(p.id,'out',l.qty,l.pu||0,'Facture '+num);}}});
  S.invoices.push(iv);
  if(fromTx){fromTx.invId=iv.id;log('Facture générée depuis un encaissement : '+num+' — '+client+' ('+fmt(invTotals(iv).ttc)+')');}
- else{log((proforma?'Pro forma créée : ':'Facture créée : ')+num+' — '+client+' ('+fmt(invTotals(iv).ttc)+')');}
+ else{log((proforma?'Devis créé : ':'Facture créée : ')+num+' — '+client+' ('+fmt(invTotals(iv).ttc)+')');}
  const wasFromTx=!!fromTx;
  INV_FROM_TX=null;INV_DATE=null;
- save();closeSheet('sheet-modal');if(R[CUR])R[CUR]();toast((proforma?'Pro forma ':'Facture ')+num+(wasFromTx?' générée':' créée'));
+ save();closeSheet('sheet-modal');if(R[CUR])R[CUR]();toast((proforma?'Devis ':'Facture ')+num+(wasFromTx?' généré':' créée'));
  if(wasFromTx)setTimeout(()=>invPreview(iv.id),150);
 }
 function invPayOpen(id){
@@ -2021,7 +2007,7 @@ function proToDef(id){
  const old=iv.num;
  iv.num=pfx+'-'+new Date().getFullYear()+'-'+String(S.settings.invSeq).padStart(4,'0');
  iv.proforma=false;iv.date=todayStr();
- log('Pro forma '+old+' transformée en facture '+iv.num+' — '+iv.client);
+ log('Devis '+old+' transformé en facture '+iv.num+' — '+iv.client);
  save();if(R[CUR])R[CUR]();toast('Facture '+iv.num+' créée');
 }
 function invPDF(id){
@@ -2033,14 +2019,14 @@ function invPDF(id){
  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(14,90,69);
  doc.text(S.company.name,S.company.logo?40:14,20);
  doc.setFontSize(11);doc.setTextColor(60);
- doc.text((iv.proforma?'FACTURE PRO FORMA ':'FACTURE ')+iv.num,S.company.logo?40:14,27);
+ doc.text((iv.proforma?'DEVIS ':'FACTURE ')+iv.num,S.company.logo?40:14,27);
  const _ci=[S.company.address||'',S.company.tel?'Tél : '+S.company.tel:'',S.company.email||'',S.company.ninea?'NINEA : '+S.company.ninea:'',S.company.rccm?'RCCM : '+S.company.rccm:''].filter(Boolean).join('  ·  ');
  if(_ci){doc.setFont('helvetica','normal');doc.setFontSize(7.6);doc.setTextColor(110);doc.text(_ci,S.company.logo?40:14,32.5,{maxWidth:S.company.logo?155:180});}
  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(20);
  doc.text('Client : '+iv.client+(iv.phone?'   Tél : '+iv.phone:''),14,44);
  doc.text('Date : '+dateLabel(iv.date),14,50);
- doc.autoTable({startY:58,head:[['Désignation','Qté','P.U. ('+S.company.symbol+')','Total']],
-  body:iv.lines.map(l=>[l.label,String(l.qty),pdfN(l.pu),pdfN(l.qty*l.pu)]),
+ doc.autoTable({startY:58,head:[['Désignation','Montant ('+S.company.symbol+')']],
+  body:iv.lines.map(l=>[l.label,pdfN(l.qty*l.pu)]),
   headStyles:{fillColor:[14,90,69]},styles:{font:'helvetica',fontSize:10}});
  let y=doc.lastAutoTable.finalY+8;
  if(t.remise>0){
@@ -2057,7 +2043,7 @@ function invPDF(id){
  if(y+arrLines.length*4>280){doc.addPage();y=20;}
  doc.text(arrLines,14,y);
  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130);
- doc.text('Document généré avec Trezo',14,287);
+ doc.text([S.company.tel||'',S.company.email||'',S.company.address||''].filter(Boolean).join('   -   ')||'',14,287);
  doc.save(iv.num+'.pdf');
  log('PDF généré : '+iv.num);save();
 }
@@ -2114,7 +2100,7 @@ R.set=function(){
   <p class="fine">Le mode lecture seule (bouton 🔒 en haut) permet de confier l’appareil à un employé ou de montrer les chiffres à un client sans risque de modification. Le code PIN protège le déverrouillage.</p>
   <button class="btn btn-o btn-full mt adm" onclick="setPin()">${S.settings.pin?'Changer le code PIN':'Définir un code PIN'}</button></div>
  <div class="card"><h2>Application</h2>
-  <p class="fine">Installez Trezo sur cet appareil pour l’ouvrir comme un logiciel, directement depuis l’écran d’accueil ou le bureau.</p>
+  <p class="fine">Installez Trezo Presta sur cet appareil pour l’ouvrir comme un logiciel, directement depuis l’écran d’accueil ou le bureau.</p>
   <button class="btn btn-o btn-full mt" onclick="promptInstall()">Installer sur cet appareil</button></div>
  <div class="card"><h2>Données</h2>
   <button class="btn btn-p btn-full" onclick="exportExcel()">Exporter en Excel (.xlsx)</button>
@@ -2122,7 +2108,7 @@ R.set=function(){
   <label class="mt adm" style="display:block;margin-top:1rem"><span class="btn btn-o btn-full" style="display:flex">Importer une sauvegarde (migration)</span><input type="file" accept=".json,application/json" style="display:none" onchange="restore(this)"></label>
   <p class="fine mt">La sauvegarde cloud est automatique. L’archive JSON sert de copie personnelle et permet de migrer les données d’une installation Trezo Classique vers le cloud.</p>
   <button class="btn btn-d btn-full mt adm act-del" onclick="resetAll()">Vider les données de l’entreprise</button></div>
- <p class="fine" style="text-align:center;margin:.4rem 0 1.2rem">Trezo Studio — prestations & création de contenu</p>`;
+ <p class="fine" style="text-align:center;margin:.4rem 0 1.2rem">Trezo Presta — un produit Trezo</p>`;
  if(MYROLE==='owner')loadMembers();
 };
 function setLogo(inp){const f=inp.files[0];if(!f)return;resizeImg(f,url=>{S.company.logo=url;document.getElementById('s-logo-prev').src=url;save();renderHeader();toast('Logo mis à jour');});}
@@ -2451,7 +2437,7 @@ function exportExcel(){
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.tx.map(x=>({Date:x.date,Type:x.type==='in'?'Encaissement':'Décaissement',Montant:x.amount,'Catégorie':x.cat,'Compte':accName(accOf(x)),Description:x.desc||''}))),'Transactions');
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.salPays.map(p=>{const e=S.employees.find(x=>x.id===p.empId);return{Mois:p.month,'Employé':e?e.name:'(retiré)',Montant:p.amount,'Payé le':p.date};})),'Salaires');
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.products.map(p=>({Produit:p.name,'Prix vente':p.price,'Prix achat':p.cost||0,Stock:p.qty,'Seuil alerte':p.alert}))),'Stocks');
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.invoices.map(i=>{const t=invTotals(i),reg=invPaid(i);return{'Numéro':i.num,Date:i.date,Client:i.client,'Total TTC':t.ttc,'Réglé':reg,'Reste dû':Math.max(0,t.ttc-reg),Statut:invStatus(i)==='pro'?'Pro forma':invStatus(i)==='cancel'?'Annulée':invStatus(i)==='paid'?'Payée':invStatus(i)==='part'?'Partielle':'Impayée'};})),'Factures');
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.invoices.map(i=>{const t=invTotals(i),reg=invPaid(i);return{'Numéro':i.num,Date:i.date,Client:i.client,'Total TTC':t.ttc,'Réglé':reg,'Reste dû':Math.max(0,t.ttc-reg),Statut:invStatus(i)==='pro'?'Devis':invStatus(i)==='cancel'?'Annulée':invStatus(i)==='paid'?'Payée':invStatus(i)==='part'?'Partielle':'Impayée'};})),'Factures');
  XLSX.writeFile(wb,'trezo-export-'+todayStr()+'.xlsx');
  log('Export Excel généré');save();
 }
@@ -2618,18 +2604,18 @@ function currencyWords(){
 function arrete(iv){
  const t=invTotals(iv).ttc;
  const w=frLettres(t);
- return 'Arrêté la présente '+(iv.proforma?'pro forma':'facture')+' à la somme de : '+w.charAt(0).toUpperCase()+w.slice(1)+' ('+pdfN(t)+') '+currencyWords()+' TTC.';
+ return 'Arrêté le présent '+(iv.proforma?'devis':'la présente facture')+' à la somme de : '+w.charAt(0).toUpperCase()+w.slice(1)+' ('+pdfN(t)+') '+currencyWords()+' TTC.';
 }
 
 /* ===== Facture : aperçu identique au document final + impression ===== */
 function invDocHTML(iv){
  const t=invTotals(iv);
- return `<div class="inv-doc"><div class="inv-head">${S.company.logo?`<img src="${S.company.logo}" alt="">`:''}<div><div class="inv-co">${esc(S.company.name)}</div><div style="font-size:.72rem;color:#5E6B64;line-height:1.55;margin-top:.15rem">${[S.company.address||'',(S.company.tel?'Tél : '+S.company.tel:'')+(S.company.tel&&S.company.email?' · ':'')+(S.company.email||''),[(S.company.ninea?'NINEA : '+S.company.ninea:''),(S.company.rccm?'RCCM : '+S.company.rccm:'')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join('<br>')}</div><div class="inv-num">${iv.proforma?'FACTURE PRO FORMA ':'FACTURE '}${esc(iv.num)}${invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':''}</div></div></div>
+ return `<div class="inv-doc"><div class="inv-head">${S.company.logo?`<img src="${S.company.logo}" alt="">`:''}<div><div class="inv-co">${esc(S.company.name)}</div><div style="font-size:.72rem;color:#5E6B64;line-height:1.55;margin-top:.15rem">${[S.company.address||'',(S.company.tel?'Tél : '+S.company.tel:'')+(S.company.tel&&S.company.email?' · ':'')+(S.company.email||''),[(S.company.ninea?'NINEA : '+S.company.ninea:''),(S.company.rccm?'RCCM : '+S.company.rccm:'')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join('<br>')}</div><div class="inv-num">${iv.proforma?'DEVIS ':'FACTURE '}${esc(iv.num)}${invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':''}</div></div></div>
  <div class="inv-meta"><div><b>Client :</b> ${esc(iv.client)}${iv.phone?'<br><b>Tél :</b> '+esc(iv.phone):''}${(function(){const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;return c&&c.address?'<br><b>Adresse :</b> '+esc(c.address):'';})()}</div><div><b>Date :</b> ${dateLabel(iv.date)}${invStatus(iv)==='part'?'<br><b>Réglé :</b> '+fmt(invPaid(iv))+' — <b>Reste dû :</b> '+fmt(invTotals(iv).ttc-invPaid(iv)):''}</div></div>
- <table class="inv-table"><thead><tr><th>Désignation</th><th style="text-align:right">Qté</th><th style="text-align:right">P.U. (${esc(S.company.symbol)})</th><th style="text-align:right">Total</th></tr></thead><tbody>${iv.lines.map(l=>`<tr><td>${esc(l.label)}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${NF.format(l.pu)}</td><td style="text-align:right">${NF.format(l.qty*l.pu)}</td></tr>`).join('')}</tbody></table>
+ <table class="inv-table"><thead><tr><th>Désignation</th><th style="text-align:right">Montant (${esc(S.company.symbol)})</th></tr></thead><tbody>${iv.lines.map(l=>`<tr><td>${esc(l.label)}</td><td style="text-align:right">${NF.format(l.qty*l.pu)}</td></tr>`).join('')}</tbody></table>
  <div class="inv-tot">${t.remise>0?`<div>Sous-total : ${fmt(t.htBrut)}</div><div>Réduction${iv.disc&&iv.disc.t==='pct'?' ('+iv.disc.v+' %)':''} : -${fmt(t.remise)}</div>`:''}<div>Montant brut : ${fmt(t.brut)}</div><div>BRS (${BRS_RATE} %) : -${fmt(t.brs)}</div><div class="ttc">Net à payer : ${fmt(t.net)}</div></div>
  <div style="margin-top:1rem;font-size:.78rem;font-weight:700;border-top:1px dashed #d8d2c4;padding-top:.6rem">${esc(arrete(iv))}</div>
- <div class="inv-foot">Document généré avec Trezo</div></div>`;
+ <div style="margin-top:1.4rem;border-top:1px solid #d8d2c4;padding-top:.6rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.4rem;font-size:.72rem;color:#5E6B64">${[S.company.tel?"☎ "+esc(S.company.tel):"",S.company.email?"✉ "+esc(S.company.email):"",S.company.address?esc(S.company.address):""].filter(Boolean).join(" · ")}</div></div>`;
 }
 function invPreview(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
@@ -3109,7 +3095,7 @@ function monthlyReport(){
    doc.setPage(i);
    doc.setDrawColor(231,226,216);doc.line(L,286,Rt,286);
    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(150,145,135);
-   doc.text(String(S.company.name).slice(0,40)+' — rapport généré avec Trezo',L,291);
+   doc.text(String(S.company.name).slice(0,40)+' — rapport généré avec Trezo Presta',L,291);
    doc.text('Page '+i+' / '+np,Rt,291,{align:'right'});
   }
   doc.save('rapport-'+m+'.pdf');

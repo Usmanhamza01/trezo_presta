@@ -1,5 +1,5 @@
 // ================================================================
-// TREZO STUDIO — Configuration (À REMPLIR avant déploiement)
+// TREZO PRESTA — Configuration (À REMPLIR avant déploiement)
 // Supabase → votre projet → Project Settings → API :
 //  - "Project URL"      -> url
 //  - "anon public" key  -> anonKey  (elle est conçue pour être publique)
