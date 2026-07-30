@@ -38,11 +38,23 @@ h2{font-size:1.1rem;font-weight:800;margin-bottom:.75rem}
 h3{font-size:.95rem;font-weight:800}
 
 /* ---------- En-tête ---------- */
-header{position:sticky;top:0;z-index:40;background:var(--vert);color:var(--on-vert,#fff);padding:.7rem 1rem;padding-top:calc(.7rem + env(safe-area-inset-top));display:flex;align-items:center;gap:.7rem}
+header{position:sticky;top:0;z-index:40;background:var(--vert);color:var(--on-vert,#fff);padding:.7rem 1rem;padding-top:calc(.7rem + env(safe-area-inset-top));display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+@media(max-width:560px){
+ header{gap:.45rem .5rem}
+ header .hlogo{width:32px;height:32px}
+ header .hname{font-size:.95rem}
+ header .hsub{font-size:.62rem}
+ header #hd-ex{order:5;flex:1 1 100%;min-width:0;margin-top:.15rem}
+ header .btn-lock{padding:.45rem .6rem;font-size:.72rem}
+ header #btn-lock,header #btn-logout{font-size:0;padding:.45rem .55rem}
+ header #btn-lock::before{content:'🔒';font-size:.95rem}
+ header #btn-logout::before{content:'⏻';font-size:.95rem}
+ body.readonly header #btn-lock::before{content:'🔓'}
+}
 header .hlogo{width:36px;height:36px;border-radius:9px;flex:none;object-fit:cover;background:var(--blanc)}
 header .hname{font-weight:800;font-size:1.05rem;line-height:1.15;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header .hsub{font-size:.68rem;font-weight:600;opacity:.75}
-.btn-lock{background:rgba(255,255,255,.14);color:var(--blanc);border-radius:10px;padding:.5rem .7rem;font-weight:700;font-size:.8rem;flex:none}
+.btn-lock{background:rgba(127,127,127,.18);color:var(--on-vert,#fff);border-radius:10px;padding:.5rem .7rem;font-weight:700;font-size:.8rem;flex:none;white-space:nowrap}
 
 /* ---------- Boutons ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.75rem 1.2rem;border-radius:11px;font-weight:800;font-size:.95rem;transition:transform .08s}
@@ -317,7 +329,7 @@ async function flushSave(){
  if(SAVING){PENDING=true;return;}
  SAVING=true;PENDING=false;
  try{
-  const payload={products:S.products,services:S.services,projects:S.projects,accounts:S.accounts,clients:S.clients,charges:S.charges,chgPays:S.chgPays,exercises:S.exercises,stockMov:S.stockMov,tx:S.tx,employees:S.employees,salPays:S.salPays,salAdv:S.salAdv,goals:S.goals,invoices:S.invoices,journal:S.journal,settings:S.settings,logo:S.company.logo};
+  const payload={products:S.products,services:S.services,projects:S.projects,accounts:S.accounts,clients:S.clients,charges:S.charges,chgPays:S.chgPays,exercises:S.exercises,stockMov:S.stockMov,tx:S.tx,employees:S.employees,salPays:S.salPays,salAdv:S.salAdv,goals:S.goals,invoices:S.invoices,journal:S.journal,settings:S.settings,logo:S.company.logo,companyInfo:{color:S.company.color||'',social:S.company.social||'',payCond:S.company.payCond||'',ninea:S.company.ninea||'',rccm:S.company.rccm||'',tel:S.company.tel||'',email:S.company.email||'',address:S.company.address||''}};
   const r=await SB.rpc('save_data',{p_company:COMPANY.id,p_data:payload,p_version:DOC_VERSION});
   if(r.error)throw r.error;
   DOC_VERSION=r.data;setSync(' · ✓ synchronisé');
@@ -494,6 +506,7 @@ function hydrate(cd){
  ['products','services','projects','accounts','clients','charges','chgPays','exercises','stockMov','tx','employees','salPays','salAdv','goals','invoices','journal'].forEach(k=>S[k]=Array.isArray(d[k])?d[k]:[]);
  S.settings=Object.assign({},DEFAULT.settings,d.settings||{});
  S.company.logo=d.logo||null;
+   if(d.companyInfo){Object.assign(S.company,d.companyInfo);}
  if(!S.accounts.length)S.accounts=[{id:'a_caisse',name:'Caisse'},{id:'a_banque',name:'Banque'},{id:'a_om',name:'Orange Money'},{id:'a_wave',name:'Wave'}];
 }
 async function loadWorkspace(){
@@ -1853,6 +1866,11 @@ function invModal(title,hint){
  <div class="grid2"><div><label>Réduction commerciale</label><select id="iv-dt" onchange="invTotalPrev()"><option value="none">Aucune</option><option value="amt">Montant fixe (${S.company.symbol})</option><option value="pct">Pourcentage (%)</option></select></div><div><label>Valeur de la réduction</label><input id="iv-dv" type="number" min="0" value="0" oninput="invTotalPrev()"></div></div>
  <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Une <b>BRS de ${BRS_RATE} %</b> (retenue à la source) est appliquée automatiquement sur le montant brut. Le client retient cette part ; vous encaissez le <b>net</b>.</div>
  <div id="iv-total" class="mt" style="font-weight:800"></div>
+ <details id="iv-netcible-box" style="margin-top:.5rem"><summary class="fine" style="cursor:pointer">💡 Calculer à partir d'un net souhaité</summary>
+  <div class="fine" style="margin:.4rem 0 .3rem">Vous savez combien vous voulez toucher net ? Saisissez-le, l'app vous donne le brut total à facturer.</div>
+  <input id="iv-netcible" type="number" min="0" placeholder="Net souhaité (${S.company.symbol})" oninput="invNetCible()">
+  <div class="fine" id="iv-netcible-out" style="margin-top:.35rem"></div>
+ </details>
  ${INV_EDIT?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('edit')">Enregistrer les modifications</button>`:INV_FROM_TX?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('def')">Générer la facture</button>`:`<div class="grid2 mt"><button class="btn btn-o" onclick="saveInvoice('pro')">Devis</button><button class="btn btn-p" onclick="saveInvoice('def')">Facture Définitive</button></div>`}`);
  renderInvLines();
 }
@@ -1964,6 +1982,15 @@ function invTotalPrev(){
  const brs=Math.round(brut*BRS_RATE/100);
  const el=document.getElementById('iv-total');
  if(el)el.innerHTML=(rem>0?'Sous-total : '+fmt(htB)+' · Réduction : -'+fmt(rem)+(dt==='pct'?' ('+dv+' %)':'')+'<br>':'')+'Montant brut : '+fmt(brut)+'<br>BRS ('+BRS_RATE+' %) : -'+fmt(brs)+'<br><b>Net à payer : '+fmt(brut-brs)+'</b>';
+}
+/* Aide au calcul inverse en mode détaillé : à partir d'un net souhaité, donne le brut total à facturer */
+function invNetCible(){
+ const net=+((document.getElementById('iv-netcible')||{}).value)||0;
+ const out=document.getElementById('iv-netcible-out');if(!out)return;
+ if(net<=0){out.innerHTML='';return;}
+ const brut=Math.round(net/(1-BRS_RATE/100));
+ const brs=brut-net;
+ out.innerHTML='Pour toucher <b>'+fmt(net)+'</b> net, facturez un brut de <b>'+fmt(brut)+'</b> (BRS '+fmt(brs)+'). Répartissez ce montant sur vos lignes.';
 }
 function saveInvoice(kind){
  const client=document.getElementById('iv-client').value.trim();
