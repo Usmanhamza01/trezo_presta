@@ -181,6 +181,33 @@ body.readonly .ro-banner{display:block}
 .thsort:hover{color:var(--vert)}
 @media print{body>*{display:none !important}#print-area{display:block !important}#print-area .inv-doc{box-shadow:none;border-radius:0;padding:0}}
 @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+.inv-eve{background:#fff;color:#1a1a1a;padding:28px 30px;font-family:'Courier New',monospace;position:relative;overflow:hidden}
+.inv-eve .inv-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);width:70%;max-width:340px;opacity:.05;pointer-events:none;z-index:0}
+.inv-eve>*{position:relative;z-index:1}
+.inv-eve .inv-title{font-size:1.7rem;font-weight:800;letter-spacing:.5px;font-family:Georgia,'Times New Roman',serif;color:var(--brand,#1a1a1a)}
+.inv-eve .inv-hr{border-top:1.5px solid #222;margin:.5rem 0 .9rem}
+.inv-eve .inv-topgrid{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.inv-eve .inv-line-strong{font-weight:700;font-size:.82rem;line-height:1.5}
+.inv-eve .inv-line-soft{font-size:.76rem;color:#333;line-height:1.5}
+.inv-eve .inv-logo{width:90px;height:90px;object-fit:contain;opacity:.9}
+.inv-eve .inv-att{font-weight:800;font-size:1rem;margin:1rem 0 .5rem;font-family:Georgia,serif}
+.inv-eve .inv-client{font-style:italic;margin-bottom:1rem}
+.inv-eve .inv-cli-name{font-weight:700;font-style:normal;font-size:.9rem}
+.inv-eve .inv-cli-sub{font-size:.78rem;color:#444}
+.inv-eve-table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.8rem}
+.inv-eve-table th{border:1px solid #222;padding:7px 9px;text-align:left;font-weight:700;background:#fafafa}
+.inv-eve-table td{border:1px solid #222;padding:9px;vertical-align:top}
+.inv-eve-table .ar{text-align:right}.inv-eve-table .ce{text-align:center}
+.inv-eve-tot{margin:.6rem 0 .3rem;margin-left:auto;width:60%}
+.inv-eve-tot .row{display:flex;justify-content:space-between;font-size:.82rem;padding:.15rem 0}
+.inv-eve-tot .row.big{font-weight:800;font-size:.95rem;border-top:1px solid #222;margin-top:.2rem;padding-top:.35rem}
+.inv-arrete{margin-top:1rem;font-size:.72rem;font-style:italic;color:#333;border-top:1px dashed #bbb;padding-top:.5rem}
+.inv-eve .inv-cond{margin-top:.8rem;font-size:.72rem;color:#444}
+.inv-eve .inv-sign{margin-top:1.6rem;border-bottom:1px dotted #999;width:200px;margin-left:auto}
+.inv-eve-foot{margin-top:2rem;padding-top:.6rem;border-top:1.5px solid #222;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:.72rem;color:#222}
+@media print{.inv-eve{padding:0}}
+
 </style>
 </head>
 <body>
@@ -323,7 +350,7 @@ const VIEWS=[["dash","Tableau"],["flux","Flux"],["cli","Clients"],["presta","Pre
 let CUR='dash';
 const R={};
 function renderNav(){
- renderExSel();
+ applyTheme();renderExSel();
  const bottom=[["dash","Tableau"],["flux","Flux"],["fact","Factures"],["presta","Prestations"]];
  document.getElementById('bnav').innerHTML=bottom.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('')+'<button onclick="openSheet(\'sheet-plus\')">'+IC.plus+'Plus</button>';
  document.getElementById('plus-items').innerHTML=[["cli","Clients"],["proj","Projets"],["sal","Charges fixes"],["obj","Objectifs"],["jour","Journal"],["set","Réglages"]].filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button class="menu-it" onclick="closeSheet(\'sheet-plus\');go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
@@ -859,7 +886,7 @@ R.dash=function(){
   <div class="card"><h3>Flux des 6 derniers mois</h3><canvas id="ch-line" height="230"></canvas></div>
   <div class="card"><h3>Décaissements du mois</h3><canvas id="ch-pie" height="230"></canvas><div id="pie-empty"></div></div>
   <div class="card"><h3>Chiffre d’affaires (12 mois)</h3><canvas id="ch-ca" height="230"></canvas></div>
-  <div class="card"><h3>Meilleurs produits — chiffre d’affaires</h3><canvas id="ch-prod" height="230"></canvas><div id="prod-empty"></div></div>
+  <div class="card"><h3>Meilleures prestations — chiffre d’affaires</h3><canvas id="ch-prod" height="230"></canvas><div id="prod-empty"></div></div>
  </div>
  <div class="card"><h3>Dernières opérations</h3>${recent.length?recent.map(x=>txRow(x,false)).join(''):'<div class="empty">Aucune opération. Ajoutez vos premiers flux dans l’onglet Flux.</div>'}</div>`;
  drawCharts(m);
@@ -880,11 +907,10 @@ function drawCharts(m){
  for(let i=11;i>=0;i--){const d=new Date(_now.getFullYear(),_now.getMonth()-i,1);ms12.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
  CH.ca=new Chart(document.getElementById('ch-ca'),{type:'line',data:{labels:ms12.map(x=>monthLabel(x).split(' ')[0]),datasets:[{label:'Chiffre d’affaires',data:ms12.map(x=>S.tx.filter(t=>t.type==='in'&&t.cat==='Prestations de services'&&t.date.slice(0,7)===x).reduce((a,t)=>a+t.amount,0)),borderColor:'#0E5A45',backgroundColor:'rgba(14,90,69,.12)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>NF.format(v)}}}}});
  const caP={};
- S.tx.filter(t=>t.type==='in'&&t.productId).forEach(t=>{const p=S.products.find(q=>q.id===t.productId);const nm=p?p.name:'(retiré)';caP[nm]=(caP[nm]||0)+t.amount;});
- S.invoices.filter(iv=>!iv.proforma&&!iv.cancelled).forEach(iv=>iv.lines.forEach(l=>{if(l.productId){const p=S.products.find(q=>q.id===l.productId);const nm=p?p.name:'(retiré)';caP[nm]=(caP[nm]||0)+l.qty*l.pu;}}));
+ S.invoices.filter(iv=>!iv.proforma&&!iv.cancelled).forEach(iv=>iv.lines.forEach(l=>{const nm=(l.label||'(sans intitulé)').slice(0,32);caP[nm]=(caP[nm]||0)+l.qty*l.pu;}));
  const pk=Object.keys(caP).sort((a,b)=>caP[b]-caP[a]).slice(0,6);
  if(pk.length){CH.prod=new Chart(document.getElementById('ch-prod'),{type:'bar',data:{labels:pk,datasets:[{label:'CA',data:pk.map(k=>caP[k]),backgroundColor:'#F2B33D',borderRadius:5}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>NF.format(v)}}}}});}
- else document.getElementById('prod-empty').innerHTML='<div class="empty">Aucune vente de produit pour l’instant — les ventes en caisse et les factures alimenteront ce graphique.</div>';
+ else document.getElementById('prod-empty').innerHTML='<div class="empty">Vos prestations facturées apparaîtront ici.</div>';
 }
 
 /* ===== Flux ===== */
@@ -1801,7 +1827,7 @@ function invModal(title,hint){
  <div class="grid2"><div><label>Téléphone (optionnel)</label><input id="iv-tel"></div><div><label>Date</label><input id="iv-date" type="date" value="${INV_DATE||defDate()}"></div></div>
  ${S.projects.filter(p=>p.status!=="cancel").length?`<label>Projet (optionnel — pour le suivi par mission)</label><select id="iv-proj"><option value="">— Aucun —</option>${S.projects.filter(p=>p.status!=="cancel").map(p=>`<option value="${p.id}" ${INV_PROJ===p.id?"selected":""}>${esc(p.title)}</option>`).join("")}</select>`:""}
  <label>Prestations</label><div id="iv-lines"></div>
- <button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ajouter une ligne</button>
+ <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-a btn-sm" onclick="invAddLine()">+ Ligne libre</button>${S.services.length?`<button class="btn btn-o btn-sm" onclick="invAddForfait()">+ Depuis un forfait</button>`:''}</div>
  <div class="grid2"><div><label>Réduction commerciale</label><select id="iv-dt" onchange="invTotalPrev()"><option value="none">Aucune</option><option value="amt">Montant fixe (${S.company.symbol})</option><option value="pct">Pourcentage (%)</option></select></div><div><label>Valeur de la réduction</label><input id="iv-dv" type="number" min="0" value="0" oninput="invTotalPrev()"></div></div>
  <div class="fine" style="background:#F7F3EC;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0">Une <b>BRS de ${BRS_RATE} %</b> (retenue à la source) est appliquée automatiquement sur le montant brut. Le client retient cette part ; vous encaissez le <b>net</b>.</div>
  <div id="iv-total" class="mt" style="font-weight:800"></div>
@@ -1841,6 +1867,21 @@ function invoiceFromTx(txId){
  invModal('Facture depuis encaissement','La facture sera marquée <b>Payée</b> et liée à cet encaissement — aucun nouveau flux ni mouvement de stock ne sera créé.');
 }
 function invAddLine(){INV_LINES.push({label:'',qty:1,pu:0,serviceId:''});renderInvLines();}
+function invAddForfait(){
+ if(!S.services.length){toast('Aucun forfait — créez-en dans l’onglet Prestations');return;}
+ const cur=document.getElementById('sheet-modal')?document.getElementById('sheet-modal').innerHTML:'';
+ openModal(`<h2>Choisir un forfait <button class="close" onclick="closeSheet('sheet-modal')">×</button></h2>
+ <p class="fine">La prestation est ajoutée comme ligne avec son tarif (modifiable ensuite).</p>
+ ${S.services.map(s=>`<button class="btn btn-o btn-full mt" onclick="invPickForfait('${s.id}')"><b>${esc(s.name)}</b> — ${fmt(s.price)}</button>`).join('')}
+ <button class="btn btn-a btn-full mt" onclick="invReopen()">Annuler</button>`);
+}
+function invReopen(){closeSheet('sheet-modal');setTimeout(()=>{invModal(INV_EDIT?'Modifier la facture':INV_FROM_TX?'Nouvelle facture (depuis un encaissement)':'Nouvelle facture','');renderInvLines();invTotalPrev();},40);}
+function invPickForfait(sid){
+ const s=S.services.find(x=>x.id===sid);if(!s)return;
+ if(INV_LINES.length===1&&!INV_LINES[0].label.trim()&&!INV_LINES[0].pu)INV_LINES=[];
+ INV_LINES.push({label:s.name,qty:1,pu:s.price,serviceId:s.id});
+ invReopen();
+}
 /* prestations : qty toujours 1, le montant = pu */
 function invLineSrv(i,sid){const s=S.services.find(x=>x.id===sid);if(!s){INV_LINES[i].serviceId='';renderInvLines();return;}INV_LINES[i]={label:s.name,qty:1,pu:s.price,serviceId:s.id};renderInvLines();}
 function invRmLine(i){INV_LINES.splice(i,1);renderInvLines();}
@@ -1880,7 +1921,7 @@ function saveInvoice(kind){
  const addrv=((document.getElementById('iv-addr')||{}).value||'').trim();
  if(!cli){cli={id:uid(),name:client,firstname:'',phone:telv,address:addrv};S.clients.push(cli);log('Client créé automatiquement depuis la facturation : '+client);toast('Nouveau client « '+client+' » ajouté à la base');}
  else{if(telv&&!cli.phone)cli.phone=telv;if(addrv&&!cli.address)cli.address=addrv;}
- const lines=INV_LINES.filter(l=>l.label.trim()&&l.qty>0).map(l=>({label:l.label.trim(),qty:l.qty,pu:l.pu,productId:l.productId||null}));
+ const lines=INV_LINES.filter(l=>l.label.trim()).map(l=>({label:l.label.trim(),qty:l.qty||1,pu:l.pu||0,productId:l.productId||null,serviceId:l.serviceId||null}));
  if(!lines.length){toast('Ajoutez au moins une ligne');return;}
  const fromTx=INV_FROM_TX?S.tx.find(x=>x.id===INV_FROM_TX):null;
  const proforma=(kind==='pro')&&!fromTx;
@@ -2016,41 +2057,97 @@ function proToDef(id){
  log('Devis '+old+' transformé en facture '+iv.num+' — '+iv.client);
  save();if(R[CUR])R[CUR]();toast('Facture '+iv.num+' créée');
 }
+function applyTheme(){
+ const c=(S.company&&S.company.color)||'#0E5A45';
+ document.documentElement.style.setProperty('--vert',c);
+ /* teinte foncée dérivée pour les dégradés/hover */
+ try{const n=c.replace('#','');const r=parseInt(n.slice(0,2),16),g=parseInt(n.slice(2,4),16),b=parseInt(n.slice(4,6),16);
+  const dk='#'+[r,g,b].map(v=>Math.max(0,Math.round(v*0.72)).toString(16).padStart(2,'0')).join('');
+  document.documentElement.style.setProperty('--vert-dk',dk);}catch(e){}
+}
+function invBuildPDF(iv){
+ if(!window.jspdf)return null;
+ const t=invTotals(iv);const co=S.company;
+ const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
+ const cliAddr=c&&c.address?c.address:'';const cliTel=iv.phone||(c&&c.phone)||'';
+ const footTel=co.tel||'+221 77 695 07 36',footMail=co.email||'lesdouceursdeve@gmail.com',footSoc=co.social||'@lesdouceurs_deve';
+ const doc=new window.jspdf.jsPDF();const W=210,M=16;
+ /* Filigrane logo en fond */
+ if(co.logo){try{const wmW=120,wmH=120;doc.saveGraphicsState&&doc.saveGraphicsState();if(doc.setGState){doc.setGState(new doc.GState({opacity:0.05}));}doc.addImage(co.logo,'PNG',(W-wmW)/2,(297-wmH)/2,wmW,wmH);if(doc.setGState){doc.setGState(new doc.GState({opacity:1}));}doc.restoreGraphicsState&&doc.restoreGraphicsState();}catch(e){}}
+ doc.setTextColor(20,20,20);
+ /* Grand titre */
+ doc.setFont('times','bold');doc.setFontSize(26);
+ try{const n=(co.color||'#1a1a1a').replace('#','');doc.setTextColor(parseInt(n.slice(0,2),16),parseInt(n.slice(2,4),16),parseInt(n.slice(4,6),16));}catch(e){doc.setTextColor(26,26,26);}
+ const title=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
+ doc.text(title,M,26);
+ doc.setTextColor(20,20,20);
+ doc.setDrawColor(34);doc.setLineWidth(.6);doc.line(M,31,W-M,31);
+ /* Bloc émetteur (gauche) + logo (droite) */
+ doc.setFont('courier','bold');doc.setFontSize(10);doc.setTextColor(30);
+ let y=40;
+ doc.text(dateLabel(iv.date),M,y);y+=5;
+ doc.text((iv.proforma?'Devis':'Facture')+' n°'+String(iv.num),M,y);y+=5;
+ if(co.address){doc.text(String(co.address),M,y);y+=5;}
+ doc.setFont('courier','normal');doc.setFontSize(8.5);doc.setTextColor(70);
+ if(co.tel){doc.text('Tél : '+co.tel,M,y);y+=4.5;}
+ if(co.email){doc.text(co.email,M,y);y+=4.5;}
+ if(co.ninea||co.rccm){doc.text([co.ninea?'NINEA : '+co.ninea:'',co.rccm?'RCCM : '+co.rccm:''].filter(Boolean).join(' · '),M,y);y+=4.5;}
+ if(co.logo){try{doc.addImage(co.logo,'PNG',W-M-28,36,28,28);}catch(e){}}
+ /* À l'attention de */
+ y=Math.max(y,70)+4;
+ doc.setFont('times','bold');doc.setFontSize(12);doc.setTextColor(20);
+ doc.text("À L'ATTENTION DE",M,y);y+=7;
+ doc.setFont('courier','bold');doc.setFontSize(10);
+ doc.text(String(iv.client||'').toUpperCase(),M,y);y+=5;
+ doc.setFont('courier','normal');doc.setFontSize(8.5);doc.setTextColor(70);
+ if(cliAddr){doc.text(String(cliAddr),M,y);y+=4.5;}
+ if(cliTel){doc.text(String(cliTel),M,y);y+=4.5;}
+ /* Tableau 4 colonnes */
+ y+=4;
+ doc.autoTable({startY:y,
+  head:[['DESCRIPTION','PRIX ('+co.symbol+')','QUANTITÉ','TOTAL']],
+  body:iv.lines.map(l=>[l.label,pdfN(l.pu),String(l.qty),pdfN(l.qty*l.pu)]),
+  theme:'grid',
+  headStyles:{fillColor:[250,250,250],textColor:[20,20,20],fontStyle:'bold',lineColor:[34,34,34],lineWidth:.3},
+  bodyStyles:{lineColor:[34,34,34],lineWidth:.3,textColor:[20,20,20]},
+  columnStyles:{1:{halign:'right'},2:{halign:'center'},3:{halign:'right'}},
+  styles:{font:'courier',fontSize:9,cellPadding:3}});
+ y=doc.lastAutoTable.finalY+4;
+ doc.setDrawColor(34);doc.line(M,y,W-M,y);y+=7;
+ /* Totaux (alignés à droite) */
+ const LX=120,RX=W-M;
+ doc.setFont('courier','normal');doc.setFontSize(9.5);doc.setTextColor(20);
+ if(t.remise>0){doc.text('RÉDUCTION :',LX,y);doc.text('-'+pdfN(t.remise)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
+ doc.text('TOTAL HT :',LX,y);doc.text(pdfN(t.brut)+' '+co.symbol,RX,y,{align:'right'});y+=6;
+ doc.text('BRS '+BRS_RATE+'% :',LX,y);doc.text(pdfN(t.brs)+' '+co.symbol,RX,y,{align:'right'});y+=7;
+ doc.setFont('courier','bold');doc.setFontSize(11);
+ doc.text('TOTAL TTC :',LX,y);doc.text(pdfN(t.net)+' '+co.symbol,RX,y,{align:'right'});y+=10;
+ /* Arrêté en lettres */
+ doc.setFont('times','italic');doc.setFontSize(8.5);doc.setTextColor(60);
+ const arrLines=doc.splitTextToSize(arrete(iv),W-2*M);
+ if(y+arrLines.length*4>270){doc.addPage();y=24;}
+ doc.text(arrLines,M,y);y+=arrLines.length*4+4;
+ if(iv.proforma){
+  doc.setFont('courier','normal');doc.setFontSize(7.6);doc.setTextColor(70);
+  doc.text("Devis valable 30 jours à compter de la date d'émission.",M,y);y+=5;
+  doc.text('Bon pour accord (date et signature) :',M,y);
+ }else if(co.payCond){
+  doc.setFont('courier','normal');doc.setFontSize(7.6);doc.setTextColor(70);
+  doc.splitTextToSize(co.payCond,W-2*M).forEach(function(ln){doc.text(ln,M,y);y+=4.5;});
+ }
+ /* Pied de page fixe : tél · email · réseaux */
+ doc.setDrawColor(34);doc.setLineWidth(.5);doc.line(M,285,W-M,285);
+ doc.setFont('courier','normal');doc.setFontSize(8);doc.setTextColor(34);
+ doc.text(String(footTel),M,290);
+ doc.text(String(footMail),W/2,290,{align:'center'});
+ doc.text(String(footSoc),W-M,290,{align:'right'});
+ return doc;
+}
 function invPDF(id){
  if(!window.jspdf){toast('Module PDF non chargé — connectez-vous une fois à Internet');return;}
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
- const t=invTotals(iv);
- const doc=new window.jspdf.jsPDF();
- if(S.company.logo){try{doc.addImage(S.company.logo,'PNG',14,12,22,22);}catch(e){}}
- doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(14,90,69);
- doc.text(S.company.name,S.company.logo?40:14,20);
- doc.setFontSize(11);doc.setTextColor(60);
- doc.text((iv.proforma?'DEVIS ':'FACTURE ')+iv.num,S.company.logo?40:14,27);
- const _ci=[S.company.address||'',S.company.tel?'Tél : '+S.company.tel:'',S.company.email||'',S.company.ninea?'NINEA : '+S.company.ninea:'',S.company.rccm?'RCCM : '+S.company.rccm:''].filter(Boolean).join('  ·  ');
- if(_ci){doc.setFont('helvetica','normal');doc.setFontSize(7.6);doc.setTextColor(110);doc.text(_ci,S.company.logo?40:14,32.5,{maxWidth:S.company.logo?155:180});}
- doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(20);
- doc.text('Client : '+iv.client+(iv.phone?'   Tél : '+iv.phone:''),14,44);
- doc.text('Date : '+dateLabel(iv.date),14,50);
- doc.autoTable({startY:58,head:[['Désignation','Montant ('+S.company.symbol+')']],
-  body:iv.lines.map(l=>[l.label,pdfN(l.qty*l.pu)]),
-  headStyles:{fillColor:[14,90,69]},styles:{font:'helvetica',fontSize:10}});
- let y=doc.lastAutoTable.finalY+8;
- if(t.remise>0){
-  doc.text('Sous-total : '+pdfN(t.htBrut)+' '+S.company.symbol,130,y);y+=6;
-  doc.text('Réduction'+(iv.disc&&iv.disc.t==='pct'?' ('+iv.disc.v+' %)':'')+' : -'+pdfN(t.remise)+' '+S.company.symbol,130,y);y+=6;
- }
- doc.text('Montant brut : '+pdfN(t.brut)+' '+S.company.symbol,130,y);
- y+=6;doc.text('BRS ('+BRS_RATE+' %) : -'+pdfN(t.brs)+' '+S.company.symbol,130,y);
- y+=7;doc.setFont('helvetica','bold');doc.setFontSize(12);
- doc.text('Net à payer : '+pdfN(t.net)+' '+S.company.symbol,130,y);
- y+=10;
- doc.setFont('helvetica','bolditalic');doc.setFontSize(9);doc.setTextColor(28,36,32);
- const arrLines=doc.splitTextToSize(arrete(iv),182);
- if(y+arrLines.length*4>280){doc.addPage();y=20;}
- doc.text(arrLines,14,y);
- doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130);
- doc.text([S.company.tel||'',S.company.email||'',S.company.address||''].filter(Boolean).join('   -   ')||'',14,287);
- doc.save(iv.num+'.pdf');
+ const doc=invBuildPDF(iv);if(!doc)return;
+ doc.save(String(iv.num)+'.pdf');
  log('PDF généré : '+iv.num);save();
 }
 
@@ -2077,7 +2174,10 @@ R.set=function(){
   <div class="grid2"><div><label>NINEA (optionnel)</label><input id="s-ninea" value="${esc(S.company.ninea||'')}"></div><div><label>RCCM (optionnel)</label><input id="s-rccm" value="${esc(S.company.rccm||'')}"></div></div>
   <div class="grid2"><div><label>Téléphone (optionnel)</label><input id="s-tel" value="${esc(S.company.tel||'')}"></div><div><label>E-mail (optionnel)</label><input id="s-email" value="${esc(S.company.email||'')}"></div></div>
   <label>Adresse (optionnel)</label><input id="s-addr" value="${esc(S.company.address||'')}">
-  <p class="fine" style="margin-top:.3rem">Ces renseignements apparaissent automatiquement en entête de vos factures.</p>
+  <label>Réseaux sociaux (optionnel)</label><input id="s-social" value="${esc(S.company.social||'')}" placeholder="@lesdouceurs_deve">
+  <label>Conditions de règlement (optionnel — bas des factures)</label><input id="s-paycond" value="${esc(S.company.payCond||'')}" placeholder="Ex. : Règlement à réception par Wave ou Orange Money">
+  <label>Couleur de marque</label><div style="display:flex;gap:.6rem;align-items:center"><input id="s-color" type="color" value="${S.company.color||'#0E5A45'}" style="width:56px;height:40px;padding:2px;border-radius:10px;cursor:pointer"><span class="fine">Appliquée à l’interface et à l’entête de vos factures.</span></div>
+  <p class="fine" style="margin-top:.3rem">Adresse, téléphone, e-mail et réseaux apparaissent automatiquement en entête et en pied de vos factures.</p>
   <label>Initiales de numérotation des factures</label><input id="s-prefix" value="${esc(S.settings.invPrefix||initialsOf(S.company.name))}" maxlength="5" style="text-transform:uppercase">
   <label>Devise</label><select id="s-cur">${CURRENCIES.map(c=>`<option value="${c[0]}" ${S.company.currency===c[0]?'selected':''}>${c[2]} (${c[1]})</option>`).join('')}</select>
   <label>Logo</label><div style="display:flex;gap:.8rem;align-items:center"><img id="s-logo-prev" src="${S.company.logo||LOGO}" style="width:50px;height:50px;border-radius:12px;border:1px solid var(--ligne);object-fit:cover" alt=""><input type="file" accept="image/*" onchange="setLogo(this)"></div>
@@ -2128,6 +2228,10 @@ async function saveCompany(){
  S.company.tel=document.getElementById('s-tel').value.trim();
  S.company.email=document.getElementById('s-email').value.trim();
  S.company.address=document.getElementById('s-addr').value.trim();
+ S.company.social=(document.getElementById('s-social')||{value:''}).value.trim();
+ S.company.payCond=(document.getElementById('s-paycond')||{value:''}).value.trim();
+ S.company.color=(document.getElementById('s-color')||{value:'#0E5A45'}).value;
+ applyTheme();
  const c=document.getElementById('s-cur').value;
  const sym=CURRENCIES.find(x=>x[0]===c)[1];
  const r=await SB.from('companies').update({name:n||S.company.name,currency:c,symbol:sym}).eq('id',COMPANY.id).select().single();
@@ -2451,6 +2555,7 @@ function exportExcel(){
 /* ===== Démarrage ===== */
 function initApp(){renderNav();renderHeader();go(VIEWS.map(function(x){return x[0];}).find(function(v){return permOf(v)!=='n';})||'dash');}
 async function boot(){
+ applyTheme();
  renderNav();
  if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}}
  if(!CONFIG.url||!CONFIG.anonKey||CONFIG.url.indexOf('VOTRE-PROJET')>=0||CONFIG.anonKey.indexOf('COLLEZ')>=0){
@@ -2616,18 +2721,88 @@ function arrete(iv){
 /* ===== Facture : aperçu identique au document final + impression ===== */
 function invDocHTML(iv){
  const t=invTotals(iv);
- return `<div class="inv-doc"><div class="inv-head">${S.company.logo?`<img src="${S.company.logo}" alt="">`:''}<div><div class="inv-co">${esc(S.company.name)}</div><div style="font-size:.72rem;color:#5E6B64;line-height:1.55;margin-top:.15rem">${[S.company.address||'',(S.company.tel?'Tél : '+S.company.tel:'')+(S.company.tel&&S.company.email?' · ':'')+(S.company.email||''),[(S.company.ninea?'NINEA : '+S.company.ninea:''),(S.company.rccm?'RCCM : '+S.company.rccm:'')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join('<br>')}</div><div class="inv-num">${iv.proforma?'DEVIS ':'FACTURE '}${esc(iv.num)}${invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':''}</div></div></div>
- <div class="inv-meta"><div><b>Client :</b> ${esc(iv.client)}${iv.phone?'<br><b>Tél :</b> '+esc(iv.phone):''}${(function(){const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;return c&&c.address?'<br><b>Adresse :</b> '+esc(c.address):'';})()}</div><div><b>Date :</b> ${dateLabel(iv.date)}${invStatus(iv)==='part'?'<br><b>Réglé :</b> '+fmt(invPaid(iv))+' — <b>Reste dû :</b> '+fmt(invTotals(iv).ttc-invPaid(iv)):''}</div></div>
- <table class="inv-table"><thead><tr><th>Désignation</th><th style="text-align:right">Montant (${esc(S.company.symbol)})</th></tr></thead><tbody>${iv.lines.map(l=>`<tr><td>${esc(l.label)}</td><td style="text-align:right">${NF.format(l.qty*l.pu)}</td></tr>`).join('')}</tbody></table>
- <div class="inv-tot">${t.remise>0?`<div>Sous-total : ${fmt(t.htBrut)}</div><div>Réduction${iv.disc&&iv.disc.t==='pct'?' ('+iv.disc.v+' %)':''} : -${fmt(t.remise)}</div>`:''}<div>Montant brut : ${fmt(t.brut)}</div><div>BRS (${BRS_RATE} %) : -${fmt(t.brs)}</div><div class="ttc">Net à payer : ${fmt(t.net)}</div></div>
- <div style="margin-top:1rem;font-size:.78rem;font-weight:700;border-top:1px dashed #d8d2c4;padding-top:.6rem">${esc(arrete(iv))}</div>
- <div style="margin-top:1.4rem;border-top:1px solid #d8d2c4;padding-top:.6rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.4rem;font-size:.72rem;color:#5E6B64">${[S.company.tel?"☎ "+esc(S.company.tel):"",S.company.email?"✉ "+esc(S.company.email):"",S.company.address?esc(S.company.address):""].filter(Boolean).join(" · ")}</div></div>`;
+ const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
+ const cliAddr=c&&c.address?c.address:'';
+ const cliTel=iv.phone||(c&&c.phone)||'';
+ const co=S.company;
+ const socials=co.social||'@lesdouceurs_deve';
+ const footTel=co.tel||'+221 77 695 07 36';
+ const footMail=co.email||'lesdouceursdeve@gmail.com';
+ const docTitle=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
+ const statusTag=invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':'';
+ return `<div class="inv-doc inv-eve" style="--brand:${co.color||'#1a1a1a'}">
+  ${co.logo?`<img class="inv-wm" src="${co.logo}" alt="">`:''}
+  <div class="inv-title">${esc(docTitle)}${statusTag}</div>
+  <div class="inv-hr"></div>
+  <div class="inv-topgrid">
+   <div class="inv-issuer">
+    <div class="inv-line-strong">${dateLabel(iv.date)}</div>
+    <div class="inv-line-strong">${iv.proforma?'Devis':'Facture'} n°${esc(String(iv.num))}</div>
+    ${co.address?`<div class="inv-line-strong">${esc(co.address)}</div>`:''}
+    ${co.tel?`<div class="inv-line-soft">Tél : ${esc(co.tel)}</div>`:''}
+    ${co.email?`<div class="inv-line-soft">${esc(co.email)}</div>`:''}
+    ${co.ninea||co.rccm?`<div class="inv-line-soft">${[co.ninea?'NINEA : '+co.ninea:'',co.rccm?'RCCM : '+co.rccm:''].filter(Boolean).join(' · ')}</div>`:''}
+   </div>
+   ${co.logo?`<img class="inv-logo" src="${co.logo}" alt="">`:''}
+  </div>
+  <div class="inv-att">À L'ATTENTION DE</div>
+  <div class="inv-client">
+   <div class="inv-cli-name">${esc(iv.client||'').toUpperCase()}</div>
+   ${cliAddr?`<div class="inv-cli-sub">${esc(cliAddr)}</div>`:''}
+   ${cliTel?`<div class="inv-cli-sub">${esc(cliTel)}</div>`:''}
+  </div>
+  <table class="inv-eve-table"><thead><tr><th>DESCRIPTION</th><th class="ar">PRIX (${esc(co.symbol)})</th><th class="ce">QUANTITÉ</th><th class="ar">TOTAL</th></tr></thead>
+  <tbody>${iv.lines.map(l=>`<tr><td>${esc(l.label)}</td><td class="ar">${NF.format(l.pu)}</td><td class="ce">${l.qty}</td><td class="ar">${NF.format(l.qty*l.pu)}</td></tr>`).join('')}</tbody></table>
+  <div class="inv-hr"></div>
+  <div class="inv-eve-tot">
+   ${t.remise>0?`<div class="row"><span>RÉDUCTION${iv.disc&&iv.disc.t==='pct'?' ('+iv.disc.v+' %)':''} :</span><b>-${NF.format(t.remise)} ${esc(co.symbol)}</b></div>`:''}
+   <div class="row"><span>TOTAL HT :</span><b>${NF.format(t.brut)} ${esc(co.symbol)}</b></div>
+   <div class="row"><span>BRS ${BRS_RATE}% :</span><b>${NF.format(t.brs)} ${esc(co.symbol)}</b></div>
+   <div class="row big"><span>TOTAL TTC :</span><b>${NF.format(t.net)} ${esc(co.symbol)}</b></div>
+  </div>
+  ${invStatus(iv)==='part'?`<div class="inv-line-soft" style="text-align:right;margin-top:.3rem">Réglé : ${fmt(invPaid(iv))} · Reste dû : ${fmt(t.net-invPaid(iv))}</div>`:''}
+  <div class="inv-arrete">${esc(arrete(iv))}</div>
+  ${iv.proforma?`<div class="inv-cond">Devis valable 30 jours à compter de la date d'émission. Bon pour accord (date et signature) :</div><div class="inv-sign"></div>`:(S.company.payCond?`<div class="inv-cond">${esc(S.company.payCond)}</div>`:'')}
+  <div class="inv-eve-foot">
+   <span>${esc(footTel)}</span>
+   <span>${esc(footMail)}</span>
+   <span>${esc(socials)}</span>
+  </div>
+ </div>`;
 }
 function invPreview(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
  openModal(`<h2>Aperçu — ${esc(iv.num)} <button class="close" onclick="closeSheet('sheet-modal')">×</button></h2>
  <div style="background:var(--sable);padding:.8rem;border-radius:12px;overflow:auto">${invDocHTML(iv)}</div>
- <div class="grid2 mt"><button class="btn btn-p" onclick="invPrint('${id}')">Imprimer</button><button class="btn btn-o" onclick="invPDF('${id}')">Télécharger PDF</button></div>`);
+ <div class="grid2 mt"><button class="btn btn-p" onclick="invPrint('${id}')">Imprimer</button><button class="btn btn-o" onclick="invPDF('${id}')">Télécharger PDF</button></div>
+ <div class="grid2 mt"><button class="btn btn-o" onclick="invShare('${id}')">📤 Partager le PDF</button><button class="btn" style="background:#25D366;color:#fff" onclick="invWhatsApp('${id}')">Envoyer par WhatsApp</button></div>`);
+}
+async function invShare(id){
+ const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
+ try{
+  const doc=invBuildPDF(iv);if(!doc){toast('Module PDF non chargé');return;}
+  const blob=doc.output('blob');
+  const file=new File([blob],String(iv.num)+'.pdf',{type:'application/pdf'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({files:[file],title:(iv.proforma?'Devis ':'Facture ')+iv.num,text:(iv.proforma?'Devis ':'Facture ')+iv.num+' — '+S.company.name});
+   log((iv.proforma?'Devis':'Facture')+' partagé(e) : '+iv.num);save();
+  }else{
+   invPDF(id);toast('Partage direct indisponible sur cet appareil — le PDF a été téléchargé, vous pouvez le joindre manuellement.');
+  }
+ }catch(e){if(String(e).indexOf('AbortError')<0)toast('Partage annulé ou indisponible');}
+}
+function invWhatsApp(id){
+ const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
+ const t=invTotals(iv);
+ const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
+ const tel=(iv.phone||(c&&c.phone)||'').replace(/[^0-9]/g,'');
+ const doctype=iv.proforma?'devis':'la facture';
+ const msg=encodeURIComponent('Bonjour'+(iv.client?' '+iv.client:'')+',\n\nVeuillez trouver '+(iv.proforma?'notre devis':'votre facture')+' n°'+iv.num+' d\'un montant de '+fmt(t.net)+'.\n\n'+S.company.name+(S.company.tel?'\n'+S.company.tel:''));
+ const url=tel?('https://wa.me/'+(tel.length<=9?'221'+tel:tel)+'?text='+msg):('https://wa.me/?text='+msg);
+ window.open(url,'_blank');
+ // proposer aussi le PDF à joindre
+ setTimeout(()=>{if(confirm('Le message WhatsApp est prêt. Télécharger aussi le PDF pour le joindre à la conversation ?'))invPDF(id);},400);
+ log('Envoi WhatsApp préparé : '+iv.num);save();
 }
 function invPrint(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
