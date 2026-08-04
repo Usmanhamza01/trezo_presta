@@ -1433,7 +1433,7 @@ function saveProd(id){
 }
 
 /* ===== Factures ===== */
-let INV_LINES=[],INV_FROM_TX=null,INV_DATE=null,INV_EDIT=null,INV_PROJ='',INV_GLOBAL=false,FFILT='all',FQ='',FMM='',FSORT='num',FDIR=-1;
+let INV_LINES=[],INV_FROM_TX=null,INV_DATE=null,INV_EDIT=null,INV_PROJ='',INV_GLOBAL=false,INV_KIND='normal',INV_ACPT_TYPE='pct',INV_ACPT_VAL=50,FFILT='all',FQ='',FMM='',FSORT='num',FDIR=-1;
 /* ===== Stock : tableau de bord & historique ===== */
 let STKTAB='prod';const CHS={};
 function stkTabs(){return `<div class="tabs"><button ${STKTAB==='prod'?'class="on"':`onclick="STKTAB='prod';R.stock()"`}>Produits</button><button ${STKTAB==='dash'?'class="on"':`onclick="STKTAB='dash';R.stock()"`}>Tableau de bord</button><button ${STKTAB==='hist'?'class="on"':`onclick="STKTAB='hist';R.stock()"`}>Historique</button></div>`;}
@@ -1708,6 +1708,9 @@ function projView(id){
  const invs=S.invoices.filter(iv=>iv.projectId===id&&!iv.proforma&&!iv.cancelled);
  const fact=invs.reduce((a,iv)=>a+invTotals(iv).net,0);
  const enc=invs.reduce((a,iv)=>a+invPaid(iv),0);
+ const acptFact=invs.filter(iv=>iv.kind==='acompte').reduce((a,iv)=>a+invTotals(iv).net,0);
+ const soldeFact=invs.filter(iv=>iv.kind==='solde').reduce((a,iv)=>a+invTotals(iv).net,0);
+ const hasAcpt=invs.some(iv=>iv.kind==='acompte'||iv.kind==='solde');
  openModal(`<h2>Suivi — ${esc(p.title)} <button class="close" onclick="closeSheet('sheet-modal')">×</button></h2>
  <div class="fine">${esc(p.client||'—')} · <span class="chip ${projStChip(p.status)}">${projStLbl(p.status)}</span>${p.due?' · échéance '+dateLabel(p.due):''}</div>
  <div class="kgrid mt">
@@ -1718,19 +1721,62 @@ function projView(id){
  </div>
  ${p.budget?`<div class="fine mt">Avancement facturation : ${Math.min(100,Math.round(fact/p.budget*100))} % du budget</div>`:''}
  ${p.note?`<div class="card mt"><div class="fine">${esc(p.note)}</div></div>`:''}
+ ${hasAcpt?`<div class="card mt" style="padding:.6rem .8rem"><div class="fine"><b>Suivi acompte / solde</b></div><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-top:.3rem"><span>Acompte(s) facturé(s)</span><b>${fmt(acptFact)}</b></div><div style="display:flex;justify-content:space-between;font-size:.82rem"><span>Solde facturé</span><b>${fmt(soldeFact)}</b></div>${p.budget?`<div style="display:flex;justify-content:space-between;font-size:.82rem;color:#888"><span>Reste à facturer (vs budget)</span><b>${fmt(Math.max(0,p.budget-fact))}</b></div>`:''}</div>`:''}
  <h3 class="mt" style="font-size:.95rem">Factures du projet (${invs.length})</h3>
- <div class="twrap"><table><tr><th>N°</th><th>Date</th><th>Net</th><th>Encaissé</th><th>Statut</th></tr>
- ${[...invs].sort((a,b)=>b.date<a.date?-1:1).map(iv=>{const st=invStatus(iv);return `<tr><td><b>${esc(iv.num)}</b></td><td>${dateLabel(iv.date)}</td><td>${fmt(invTotals(iv).net)}</td><td>${fmt(invPaid(iv))}</td><td><span class="chip ${st==='paid'?'chip-g':st==='part'?'chip-a':'chip-r'}">${st==='paid'?'Payée':st==='part'?'Partielle':'Impayée'}</span></td></tr>`;}).join('')||'<tr><td colspan="5" class="fine">Aucune facture rattachée. Sélectionnez ce projet lors de la création d’une facture.</td></tr>'}</table></div>`);
+ <div class="twrap"><table><tr><th>N°</th><th>Type</th><th>Date</th><th>Net</th><th>Encaissé</th><th>Statut</th></tr>
+ ${[...invs].sort((a,b)=>b.date<a.date?-1:1).map(iv=>{const st=invStatus(iv);const kl=iv.kind==='acompte'?'<span class="chip chip-a">Acompte</span>':iv.kind==='solde'?'<span class="chip chip-g">Solde</span>':'';return `<tr><td><b>${esc(iv.num)}</b></td><td>${kl}</td><td>${dateLabel(iv.date)}</td><td>${fmt(invTotals(iv).net)}</td><td>${fmt(invPaid(iv))}</td><td><span class="chip ${st==='paid'?'chip-g':st==='part'?'chip-a':'chip-r'}">${st==='paid'?'Payée':st==='part'?'Partielle':'Impayée'}</span></td></tr>`;}).join('')||'<tr><td colspan="6" class="fine">Aucune facture rattachée. Sélectionnez ce projet lors de la création d’une facture.</td></tr>'}</table></div>`);
+}
+function projAcomptesTotal(projectId,exceptId){
+ return S.invoices.filter(iv=>iv.projectId===projectId&&iv.kind==='acompte'&&!iv.proforma&&!iv.cancelled&&iv.id!==exceptId).reduce((a,iv)=>a+invTotals(iv).net,0);
+}
+function invProjChange(){
+ INV_PROJ=(document.getElementById('iv-proj')||{}).value||'';
+ const box=document.getElementById('iv-kind-box');
+ if(box)box.style.display=INV_PROJ?'block':'none';
+ if(!INV_PROJ)INV_KIND='normal';
+ invKindChange();
+}
+function invKindChange(){
+ INV_KIND=(document.getElementById('iv-kind')||{value:'normal'}).value;
+ const ab=document.getElementById('iv-acpt-box'),sb=document.getElementById('iv-solde-box');
+ if(ab)ab.style.display=INV_KIND==='acompte'?'block':'none';
+ if(sb)sb.style.display=INV_KIND==='solde'?'block':'none';
+ if(INV_KIND==='acompte')invAcptPrev();
+ if(INV_KIND==='solde')invSoldePrev();
+}
+function invAcptPrev(){
+ INV_ACPT_TYPE=(document.getElementById('iv-acpt-type')||{value:'pct'}).value;
+ INV_ACPT_VAL=+((document.getElementById('iv-acpt-val')||{}).value)||0;
+ const out=document.getElementById('iv-acpt-out');if(!out)return;
+ const netSaisi=INV_LINES.reduce((a,l)=>a+(l.qty||0)*(l.pu||0),0);
+ let acpt=0;
+ if(INV_ACPT_TYPE==='pct')acpt=Math.round(netSaisi*Math.min(100,INV_ACPT_VAL)/100);
+ else acpt=Math.min(INV_ACPT_VAL,netSaisi);
+ out.innerHTML=netSaisi>0?`Sur un total net de <b>${fmt(netSaisi)}</b>, l'acompte est de <b>${fmt(acpt)}</b>${INV_ACPT_TYPE==='pct'?' ('+INV_ACPT_VAL+' %)':''}. C'est ce montant qui sera facturé.`:`Saisissez d'abord le montant total dans les lignes ci-dessous.`;
+}
+function invSoldePrev(){
+ const box=document.getElementById('iv-solde-box');if(!box)return;
+ const acpts=projAcomptesTotal(INV_PROJ,INV_EDIT);
+ const netSaisi=INV_LINES.reduce((a,l)=>a+(l.qty||0)*(l.pu||0),0);
+ const solde=Math.max(0,netSaisi-acpts);
+ box.innerHTML=`<b>Facture de solde.</b> Saisissez le <b>montant total</b> de la prestation. Acompte(s) déjà facturé(s) : <b>${fmt(acpts)}</b>. Solde à payer : <b>${fmt(solde)}</b>.`;
 }
 function invTotals(iv){
- const netSaisi=iv.lines.reduce((a,l)=>a+l.qty*l.pu,0);  /* montant saisi = NET voulu */
+ const totalLignes=iv.lines.reduce((a,l)=>a+l.qty*l.pu,0);
  let remise=0;
- if(iv.disc&&iv.disc.v>0)remise=iv.disc.t==='pct'?netSaisi*Math.min(100,iv.disc.v)/100:Math.min(iv.disc.v,netSaisi);
- const net=netSaisi-remise;                              /* net à payer après remise éventuelle */
- const brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;    /* brut (HT) reconstitué à l'envers */
- const brs=brut-net;                                      /* BRS = brut - net */
- /* htBrut/remise conservés pour l'affichage ; ht=brut (TOTAL HT), tva=BRS, ttc=net encaissé */
- return{htBrut:netSaisi,remise,brut,brs,net,ht:brut,tva:brs,ttc:net};
+ if(iv.disc&&iv.disc.v>0)remise=iv.disc.t==='pct'?totalLignes*Math.min(100,iv.disc.v)/100:Math.min(iv.disc.v,totalLignes);
+ const totalNet=totalLignes-remise;
+ let net=totalNet,acompteDeduit=0;
+ if(iv.kind==='acompte'){
+  if(iv.acptType==='amt')net=Math.min(iv.acptVal||0,totalNet);
+  else net=Math.round(totalNet*Math.min(100,iv.acptVal||0)/100);
+ }else if(iv.kind==='solde'){
+  acompteDeduit=iv.projectId?projAcomptesTotal(iv.projectId,iv.id):0;
+  net=Math.max(0,totalNet-acompteDeduit);
+ }
+ const brut=net>0?Math.round(net/(1-BRS_RATE/100)):0;
+ const brs=brut-net;
+ return{htBrut:totalLignes,remise,totalNet,acompteDeduit,brut,brs,net,ht:brut,tva:brs,ttc:net};
 }
 function invPaid(iv){if(Array.isArray(iv.pays))return iv.pays.reduce((a,p)=>a+p.amount,0);return iv.paid?invTotals(iv).ttc:0;}
 function invStatus(iv){if(iv.proforma)return'pro';if(iv.cancelled)return'cancel';const t=invTotals(iv).ttc,r=invPaid(iv);if(r>=t-0.5)return'paid';if(r>0)return'part';return'unpaid';}
@@ -1846,7 +1892,23 @@ function invModal(title,hint){
  <label>Client</label><input id="iv-client" list="dl-cli" placeholder="Nom du client — la base propose vos clients" oninput="invCliMatch()"><datalist id="dl-cli">${S.clients.map(c=>`<option value="${esc(cliFull(c))}">`).join('')}</datalist><div id="iv-cli-hint" class="fine"></div>
  <label>Adresse du client (optionnel — enregistrée dans sa fiche)</label><input id="iv-addr">
  <div class="grid2"><div><label>Téléphone (optionnel)</label><input id="iv-tel"></div><div><label>Date</label><input id="iv-date" type="date" value="${INV_DATE||defDate()}"></div></div>
- ${S.projects.filter(p=>p.status!=="cancel").length?`<label>Projet (optionnel — pour le suivi par mission)</label><select id="iv-proj"><option value="">— Aucun —</option>${S.projects.filter(p=>p.status!=="cancel").map(p=>`<option value="${p.id}" ${INV_PROJ===p.id?"selected":""}>${esc(p.title)}</option>`).join("")}</select>`:""}
+ ${S.projects.filter(p=>p.status!=="cancel").length?`<label>Projet (optionnel — pour le suivi par mission)</label><select id="iv-proj" onchange="invProjChange()"><option value="">— Aucun —</option>${S.projects.filter(p=>p.status!=="cancel").map(p=>`<option value="${p.id}" ${INV_PROJ===p.id?"selected":""}>${esc(p.title)}</option>`).join("")}</select>
+ <div id="iv-kind-box" style="display:${INV_PROJ?'block':'none'};margin-top:.5rem">
+  <label>Type de facture</label>
+  <select id="iv-kind" onchange="invKindChange()">
+   <option value="normal" ${INV_KIND==='normal'?'selected':''}>Facture normale</option>
+   <option value="acompte" ${INV_KIND==='acompte'?'selected':''}>Facture d'acompte</option>
+   <option value="solde" ${INV_KIND==='solde'?'selected':''}>Facture de solde</option>
+  </select>
+  <div id="iv-acpt-box" style="display:${INV_KIND==='acompte'?'block':'none'};margin-top:.4rem">
+   <div class="grid2">
+    <div><label>Acompte en</label><select id="iv-acpt-type" onchange="invAcptPrev()"><option value="pct" ${INV_ACPT_TYPE==='pct'?'selected':''}>Pourcentage (%)</option><option value="amt" ${INV_ACPT_TYPE==='amt'?'selected':''}>Montant fixe</option></select></div>
+    <div><label>Valeur</label><input id="iv-acpt-val" type="number" min="0" value="${INV_ACPT_VAL}" oninput="invAcptPrev()"></div>
+   </div>
+   <div class="fine" id="iv-acpt-out" style="margin-top:.3rem"></div>
+  </div>
+  <div id="iv-solde-box" style="display:${INV_KIND==='solde'?'block':'none'};margin-top:.4rem" class="fine"></div>
+ </div>`:""}
  <label>Mode de facturation</label>
  <div class="seg" style="display:flex;gap:.4rem;margin-bottom:.6rem">
   <button type="button" id="ivm-detail" class="btn btn-sm ${INV_GLOBAL?'btn-o':'btn-p'}" onclick="invSetMode(false)" style="flex:1">Prestations détaillées</button>
@@ -1865,13 +1927,14 @@ function invModal(title,hint){
  
  ${INV_EDIT?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('edit')">Enregistrer les modifications</button>`:INV_FROM_TX?`<button class="btn btn-p btn-full mt" onclick="saveInvoice('def')">Générer la facture</button>`:`<div class="grid2 mt"><button class="btn btn-o" onclick="saveInvoice('pro')">Devis</button><button class="btn btn-p" onclick="saveInvoice('def')">Facture Définitive</button></div>`}`);
  renderInvLines();
+ if(INV_PROJ)invKindChange();
 }
 function invEdit(id){
  const iv=S.invoices.find(x=>x.id===id);if(!iv)return;
  if(iv.cancelled){toast('Une facture annulée ne peut pas être modifiée');return;}
  if(invPaid(iv)>0){toast('Modification impossible : des règlements sont déjà enregistrés. Annulez la facture ou ajustez le règlement.');return;}
  if(exGuard(iv.date))return;
- INV_FROM_TX=null;INV_EDIT=id;INV_DATE=iv.date;INV_PROJ=iv.projectId||'';
+ INV_FROM_TX=null;INV_EDIT=id;INV_DATE=iv.date;INV_PROJ=iv.projectId||'';INV_KIND=iv.kind||'normal';INV_ACPT_TYPE=iv.acptType||'pct';INV_ACPT_VAL=iv.acptVal||50;
  INV_LINES=iv.lines.map(l=>({label:l.label,qty:l.qty,pu:l.pu,productId:l.productId||''}));
  invModal((iv.proforma?'Modifier le devis ':'Modifier la facture ')+iv.num,'Le numéro de pièce <b>'+esc(iv.num)+'</b> est conservé. Les quantités déjà retirées du stock sont recalculées automatiquement.');
  const set=(k,v)=>{const el=document.getElementById(k);if(el)el.value=v;};
@@ -1884,7 +1947,7 @@ function invEdit(id){
  invTotalPrev();
 }
 function newInvoice(){
- INV_FROM_TX=null;INV_DATE=null;INV_EDIT=null;INV_PROJ='';INV_GLOBAL=false;
+ INV_FROM_TX=null;INV_DATE=null;INV_EDIT=null;INV_PROJ='';INV_GLOBAL=false;INV_KIND='normal';INV_ACPT_TYPE='pct';INV_ACPT_VAL=50;
  INV_LINES=[{label:'',qty:1,pu:0,productId:''}];
  invModal('Nouvelle facture','');
 }
@@ -1991,7 +2054,7 @@ function saveInvoice(kind){
   if(!old.proforma)old.lines.forEach(l=>{if(l.productId){const p=S.products.find(x=>x.id===l.productId);if(p){p.qty+=l.qty;smov(p.id,'in',l.qty,l.pu||0,'Modification facture '+old.num);}}});
   if(!old.proforma){for(const l of lines){if(l.productId){const p=S.products.find(x=>x.id===l.productId);if(p&&p.qty<l.qty&&!confirm('Stock insuffisant pour '+p.name+' ('+p.qty+' disponible(s)). Enregistrer quand même ?')){
    old.lines.forEach(o=>{if(o.productId){const q=S.products.find(x=>x.id===o.productId);if(q){q.qty=Math.max(0,q.qty-o.qty);smov(q.id,'out',o.qty,o.pu||0,'Modification annulée '+old.num);}}});return;}}}}
-  old.client=client;old.clientId=cli.id;old.projectId=(document.getElementById('iv-proj')||{}).value||null;
+  old.client=client;old.clientId=cli.id;old.projectId=(document.getElementById('iv-proj')||{}).value||null;old.kind=(document.getElementById('iv-proj')||{}).value?((document.getElementById('iv-kind')||{value:'normal'}).value):'normal';old.acptType=(document.getElementById('iv-acpt-type')||{value:'pct'}).value;old.acptVal=+((document.getElementById('iv-acpt-val')||{}).value)||0;
   old.phone=document.getElementById('iv-tel').value.trim();
   old.date=document.getElementById('iv-date').value||old.date;
   old.lines=lines;
@@ -2020,7 +2083,7 @@ function saveInvoice(kind){
   const nextN=(S.settings.seqY[exYear]||0)+1;S.settings.seqY[exYear]=nextN;
   num=pfx+'-'+exYear+'-'+String(nextN).padStart(3,'0');
  }
- const iv={id:uid(),num,client,clientId:cli.id,projectId:(document.getElementById('iv-proj')||{}).value||null,phone:document.getElementById('iv-tel').value.trim(),date:ivDate,lines,tva:0,disc:(function(){const dt=(document.getElementById('iv-dt')||{}).value||'none';const dv=+((document.getElementById('iv-dv')||{}).value)||0;return(dt!=='none'&&dv>0)?{t:dt,v:dv}:null;})(),paid:!!fromTx,proforma:proforma};
+ const iv={id:uid(),num,client,clientId:cli.id,projectId:(document.getElementById('iv-proj')||{}).value||null,kind:(document.getElementById('iv-proj')||{}).value?((document.getElementById('iv-kind')||{value:'normal'}).value):'normal',acptType:(document.getElementById('iv-acpt-type')||{value:'pct'}).value,acptVal:+((document.getElementById('iv-acpt-val')||{}).value)||0,phone:document.getElementById('iv-tel').value.trim(),date:ivDate,lines,tva:0,disc:(function(){const dt=(document.getElementById('iv-dt')||{}).value||'none';const dv=+((document.getElementById('iv-dv')||{}).value)||0;return(dt!=='none'&&dv>0)?{t:dt,v:dv}:null;})(),paid:!!fromTx,proforma:proforma};
  if(fromTx)iv.pays=[{d:iv.date,amount:invTotals(iv).ttc}];
  if(!fromTx&&!proforma)lines.forEach(l=>{if(l.productId){const p=S.products.find(x=>x.id===l.productId);if(p){p.qty=Math.max(0,p.qty-l.qty);smov(p.id,'out',l.qty,l.pu||0,'Facture '+num);}}});
  S.invoices.push(iv);
@@ -2148,7 +2211,8 @@ function invBuildPDF(iv){
  doc.setFont('helvetica','bold');doc.setFontSize(24);doc.setTextColor(BR[0],BR[1],BR[2]);
  doc.text(iv.proforma?'DEVIS':'FACTURE',M,24);
  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(150,150,150);
- if(co.name)doc.text(co.name.toUpperCase(),M,30);
+ const kl=iv.kind==='acompte'?"FACTURE D'ACOMPTE":iv.kind==='solde'?'FACTURE DE SOLDE':'';
+ if(co.name)doc.text(co.name.toUpperCase()+(kl?'  ·  '+kl:''),M,30);
  doc.setTextColor(20,20,20);
  doc.setDrawColor(230,225,215);doc.setLineWidth(.4);doc.line(M,35,W-M,35);
  /* Bloc émetteur (gauche) + logo (droite) */
@@ -2186,12 +2250,16 @@ function invBuildPDF(iv){
  /* Totaux (alignés à droite) */
  const LX=120,RX=W-M;
  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(90);
+ if(iv.kind==='acompte'||iv.kind==='solde'){doc.text('Total prestation :',LX,y);doc.text(pdfN(t.totalNet)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
+ if(iv.kind==='acompte'){doc.text('Acompte'+(iv.acptType==='pct'?' ('+iv.acptVal+' %)':'')+' :',LX,y);doc.text(pdfN(t.net)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
+ if(iv.kind==='solde'&&t.acompteDeduit>0){doc.text('Acompte(s) verse(s) :',LX,y);doc.text('-'+pdfN(t.acompteDeduit)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
  if(t.remise>0){doc.text('RÉDUCTION :',LX,y);doc.text('-'+pdfN(t.remise)+' '+co.symbol,RX,y,{align:'right'});y+=6;}
- doc.text('TOTAL HT :',LX,y);doc.text(pdfN(t.brut)+' '+co.symbol,RX,y,{align:'right'});y+=6;
+ doc.text('TOTAL HT'+(iv.kind==='acompte'?" (acompte)":iv.kind==='solde'?' (solde)':'')+' :',LX,y);doc.text(pdfN(t.brut)+' '+co.symbol,RX,y,{align:'right'});y+=6;
  doc.text('BRS '+BRS_RATE+'% :',LX,y);doc.text(pdfN(t.brs)+' '+co.symbol,RX,y,{align:'right'});y+=7;
  y+=1;doc.setFillColor(BR[0],BR[1],BR[2]);doc.roundedRect(LX-4,y-5,RX-LX+8,10,2,2,'F');
  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
- doc.text('TOTAL TTC :',LX,y+1.5);doc.text(pdfN(t.net)+' '+co.symbol,RX,y+1.5,{align:'right'});doc.setTextColor(20,20,20);y+=12;
+ const lbl=iv.kind==='acompte'?'ACOMPTE À PAYER :':iv.kind==='solde'?'SOLDE À PAYER :':'TOTAL TTC :';
+ doc.text(lbl,LX,y+1.5);doc.text(pdfN(t.net)+' '+co.symbol,RX,y+1.5,{align:'right'});doc.setTextColor(20,20,20);y+=12;
  /* Arrêté en lettres */
  doc.setFont('times','italic');doc.setFontSize(8.5);doc.setTextColor(60);
  const arrLines=doc.splitTextToSize(arrete(iv),W-2*M);
@@ -2798,6 +2866,7 @@ function invDocHTML(iv){
  const socials=co.social||'@lesdouceurs_deve';
  const footTel=co.tel||'+221 77 695 07 36';
  const footMail=co.email||'lesdouceursdeve@gmail.com';
+ const kindLabel=iv.kind==='acompte'?" — FACTURE D'ACOMPTE":iv.kind==='solde'?' — FACTURE DE SOLDE':'';
  const docTitle=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
  const statusTag=invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':'';
  return `<div class="inv-doc inv-eve" style="--brand:${co.color||'#0E5A45'}">
@@ -2805,7 +2874,7 @@ function invDocHTML(iv){
   ${co.logo?`<img class="inv-wm" src="${co.logo}" alt="">`:''}
   <div class="inv-pad">
   <div class="inv-topgrid">
-   <div><div class="inv-title">${iv.proforma?'DEVIS':'FACTURE'}</div><div class="inv-sub">${esc(co.name||'')}${statusTag}</div></div>
+   <div><div class="inv-title">${iv.proforma?'DEVIS':'FACTURE'}</div><div class="inv-sub">${esc(co.name||'')}${kindLabel}${statusTag}</div></div>
    ${co.logo?`<img class="inv-logo" src="${co.logo}" alt="">`:''}
   </div>
   <div class="inv-hr"></div>
@@ -2831,10 +2900,13 @@ function invDocHTML(iv){
   <tbody>${iv.lines.map(l=>`<tr><td>${esc(l.label)}</td><td class="ar">${NF.format(l.pu)}</td><td class="ce">${l.qty}</td><td class="ar">${NF.format(l.qty*l.pu)}</td></tr>`).join('')}</tbody></table>
   <div class="inv-hr"></div>
   <div class="inv-eve-tot">
+   ${(iv.kind==='acompte'||iv.kind==='solde')?`<div class="row"><span>Total prestation (net) :</span><b>${NF.format(t.totalNet)} ${esc(co.symbol)}</b></div>`:''}
+   ${iv.kind==='acompte'?`<div class="row"><span>Acompte ${iv.acptType==='pct'?'('+iv.acptVal+' %)':'demandé'} :</span><b>${NF.format(t.net)} ${esc(co.symbol)}</b></div>`:''}
+   ${iv.kind==='solde'&&t.acompteDeduit>0?`<div class="row"><span>Acompte(s) déjà versé(s) :</span><b>-${NF.format(t.acompteDeduit)} ${esc(co.symbol)}</b></div>`:''}
    ${t.remise>0?`<div class="row"><span>RÉDUCTION${iv.disc&&iv.disc.t==='pct'?' ('+iv.disc.v+' %)':''} :</span><b>-${NF.format(t.remise)} ${esc(co.symbol)}</b></div>`:''}
-   <div class="row"><span>TOTAL HT :</span><b>${NF.format(t.brut)} ${esc(co.symbol)}</b></div>
+   <div class="row"><span>TOTAL HT ${iv.kind==='acompte'?"(de l'acompte)":iv.kind==='solde'?'(du solde)':''} :</span><b>${NF.format(t.brut)} ${esc(co.symbol)}</b></div>
    <div class="row"><span>BRS ${BRS_RATE}% :</span><b>${NF.format(t.brs)} ${esc(co.symbol)}</b></div>
-   <div class="row big"><span>TOTAL TTC :</span><b>${NF.format(t.net)} ${esc(co.symbol)}</b></div>
+   <div class="row big"><span>${iv.kind==='acompte'?'ACOMPTE À PAYER':iv.kind==='solde'?'SOLDE À PAYER':'TOTAL TTC'} :</span><b>${NF.format(t.net)} ${esc(co.symbol)}</b></div>
   </div>
   ${invStatus(iv)==='part'?`<div class="inv-line-soft" style="text-align:right;margin-top:.3rem">Réglé : ${fmt(invPaid(iv))} · Reste dû : ${fmt(t.net-invPaid(iv))}</div>`:''}
   <div class="inv-arrete">${esc(arrete(iv))}</div>
