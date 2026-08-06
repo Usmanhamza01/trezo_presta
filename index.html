@@ -284,7 +284,7 @@ const CURRENCIES=[["XOF","FCFA","Franc CFA (UEMOA)"],["XAF","FCFA","Franc CFA (C
 const CAT_IN=["Prestations de services","Avance client","Remboursement","Apport","Autre"];
 const CLI_CATS=["Prestations de services","Avance client"];
 const CAT_OUT=["Achats fournisseurs","Loyer","Salaires","Transport","Électricité & eau","Internet & téléphone","Impôts & taxes","Entretien","Autre",'Charges fixes'];
-const DEFAULT={v:2,company:{name:"",currency:"XOF",symbol:"FCFA",logo:null},license:null,products:[],services:[],projects:[],accounts:[],clients:[],charges:[],chgPays:[],exercises:[],stockMov:[],tx:[],employees:[],salPays:[],salAdv:[],goals:[],invoices:[],journal:[],settings:{pin:null,readOnly:false,invSeq:0}};
+const DEFAULT={v:2,company:{name:"",currency:"XOF",symbol:"FCFA",logo:null},license:null,products:[],services:[],projects:[],accounts:[],clients:[],charges:[],chgPays:[],exercises:[],stockMov:[],tx:[],employees:[],salPays:[],salAdv:[],goals:[],invoices:[],journal:[],settings:{pin:null,readOnly:false,invSeq:0,repartOn:false,reparts:[],repartLog:[]}};
 const LOGO='data:image/svg+xml;utf8,'+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='#0E5A45'/><rect x='46' y='104' width='22' height='42' rx='6' fill='#F2B33D'/><rect x='78' y='84' width='22' height='62' rx='6' fill='#7FC8A9'/><rect x='110' y='58' width='22' height='88' rx='6' fill='#FFFFFF'/><rect x='38' y='36' width='116' height='16' rx='6' fill='#FFFFFF'/></svg>");
 let S=JSON.parse(JSON.stringify(DEFAULT));
 let SB=null,SESSION=null,COMPANY=null,DOC_VERSION=1,SAVE_T=null,SAVING=false,PENDING=false,PERMS=null,MYROLE='owner',MEMS=[];
@@ -900,7 +900,7 @@ R.dash=function(){
   <div class="kpi"><div class="lbl">Chiffre d’affaires ${new Date().getFullYear()}</div><div class="val">${fmt(caY)}</div></div>
  </div>
  ${(function(){const py=new Date().getFullYear()-1,pe=exOf(py);return (pe&&pe.status==='closed')?`<div class="fine" style="margin:-.2rem 0 .8rem">Exercice ${new Date().getFullYear()} en cours · Report à nouveau ${py} : <b>${fmt(pe.ran)}</b></div>`:'';})()}
- <div class="card"><h3>Soldes par compte</h3><div class="kgrid" style="margin-bottom:0">${S.accounts.map(a=>`<div class="kpi"><div class="lbl">${esc(a.name)}</div><div class="val" style="font-size:1.02rem">${fmt(accBal(a.id))}</div></div>`).join('')}</div></div>
+ <div class="card">${S.settings.repartOn&&repartRubriques().length&&repartTotalPct()===100?`<div class="card"><h3>Répartition des encaissements</h3><div class="fine" style="margin-bottom:.5rem">Cumul par rubrique.</div>${repartRubriques().map(r=>{const s=repartSolde(r.name);const seuil=+r.seuil>0;const pctSeuil=seuil?Math.min(100,Math.round(s/r.seuil*100)):0;return `<div style="margin-bottom:.5rem"><div style="display:flex;justify-content:space-between;font-size:.85rem"><span><b>${esc(r.name)}</b> <span class="fine">(${r.pct} %)</span></span><b>${fmt(s)}</b></div>${seuil?`<div style="background:#eee;border-radius:6px;height:6px;margin-top:.2rem;overflow:hidden"><div style="width:${pctSeuil}%;height:100%;background:${pctSeuil>=100?'var(--rouge)':'var(--vert)'}"></div></div><div class="fine">${pctSeuil}% du seuil (${fmt(r.seuil)})${pctSeuil>=100?' — atteint':''}</div>`:''}</div>`;}).join('')}</div>`:''}<h3>Soldes par compte</h3><div class="kgrid" style="margin-bottom:0">${S.accounts.map(a=>`<div class="kpi"><div class="lbl">${esc(a.name)}</div><div class="val" style="font-size:1.02rem">${fmt(accBal(a.id))}</div></div>`).join('')}</div></div>
  
  <div class="grid2" style="margin-bottom:1rem"><button class="btn btn-o" onclick="monthlyReport()">Rapport du mois (PDF)</button><button class="btn btn-o" onclick="exportExcel()">Export Excel</button></div>
  <div class="charts">
@@ -974,6 +974,51 @@ function renderFluxList(){
   :'<div class="empty">'+((q||FLUX_M)?'Aucune opération ne correspond à ces filtres.':'Aucune opération pour le moment.')+'</div>';
 }
 function fluxProd(){}
+function repartToggle(on){S.settings.repartOn=on;const e=document.getElementById('repart-editor');if(e){e.style.display=on?'block':'none';renderRepartEditor();}save();}
+function renderRepartEditor(){
+ const e=document.getElementById('repart-editor');if(!e)return;
+ const rubs=S.settings.reparts||[];
+ const total=rubs.reduce((a,r)=>a+(+r.pct||0),0);
+ e.innerHTML=rubs.map((r,i)=>`<div class="card" style="padding:.6rem .7rem;margin-bottom:.5rem">
+   <div class="grid2"><div><label>Rubrique</label><input value="${esc(r.name||'')}" oninput="repartSet(${i},'name',this.value)" placeholder="Ex. : Épargne"></div><div><label>Pourcentage (%)</label><input type="number" min="0" max="100" value="${r.pct||''}" oninput="repartSet(${i},'pct',this.value)"></div></div>
+   <div class="grid2" style="margin-top:.4rem"><div><label>Seuil max (optionnel)</label><input type="number" min="0" value="${r.seuil||''}" oninput="repartSet(${i},'seuil',this.value)" placeholder="Aucun"></div><div><label>Au seuil atteint</label><select onchange="repartSet(${i},'seuilAction',this.value)"><option value="stop" ${r.seuilAction!=='continue'?'selected':''}>Arrêter la répartition</option><option value="continue" ${r.seuilAction==='continue'?'selected':''}>Continuer malgré tout</option></select></div></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.4rem"><span class="fine">Cumul actuel : <b>${fmt(repartSolde(r.name))}</b>${+r.seuil>0?' / '+fmt(r.seuil):''}</span><button class="btn btn-sm btn-d" onclick="repartDel(${i})">Supprimer</button></div>
+  </div>`).join('')
+  +`<button class="btn btn-a btn-sm" onclick="repartAdd()">+ Ajouter une rubrique</button>
+  <div class="fine mt" style="font-weight:700;color:${total===100?'var(--vert)':'var(--rouge)'}">Total : ${total} %${total===100?' ✓':' — doit faire 100 %'}</div>`;
+}
+function repartAdd(){S.settings.reparts=S.settings.reparts||[];S.settings.reparts.push({name:'',pct:0,seuil:0,seuilAction:'stop'});renderRepartEditor();}
+function repartSet(i,k,v){if(!S.settings.reparts[i])return;S.settings.reparts[i][k]=(k==='pct'||k==='seuil')?(+v||0):v;if(k==='pct'||k==='seuil')renderRepartEditor();save();}
+function repartDel(i){if(!confirm('Supprimer cette rubrique ?'))return;S.settings.reparts.splice(i,1);renderRepartEditor();save();}
+function repartRubriques(){return (S.settings.reparts||[]).filter(r=>r&&r.name&&+r.pct>0);}
+function repartTotalPct(){return repartRubriques().reduce((a,r)=>a+(+r.pct||0),0);}
+function repartSolde(name){
+ /* solde cumulé d'une rubrique = somme des ventilations enregistrées */
+ return (S.settings.repartLog||[]).filter(e=>e.name===name).reduce((a,e)=>a+e.amount,0);
+}
+function repartApply(montant,txId,dateStr){
+ if(!S.settings.repartOn)return;
+ const rubs=repartRubriques();
+ if(!rubs.length)return;
+ if(repartTotalPct()!==100)return;
+ const log=S.settings.repartLog=S.settings.repartLog||[];
+ rubs.forEach(r=>{
+  let part=Math.round(montant*(+r.pct)/100);
+  /* Gestion du seuil */
+  if(+r.seuil>0){
+   const dejaAtteint=repartSolde(r.name);
+   const reste=Math.max(0,(+r.seuil)-dejaAtteint);
+   if(reste<=0){
+    /* seuil déjà atteint */
+    if(r.seuilAction==='stop')return; /* on ne ventile plus */
+    /* sinon 'continue' : on ventile quand même */
+   }else if(part>reste&&r.seuilAction==='stop'){
+    part=reste; /* on plafonne au seuil */
+   }
+  }
+  if(part>0)log.push({id:uid(),name:r.name,amount:part,txId,date:dateStr||todayStr()});
+ });
+}
 function addTx(){
  const amt=+document.getElementById('f-amt').value;
  if(!amt||amt<=0){toast('Entrez un montant valide');return;}
@@ -1008,7 +1053,9 @@ function addTx(){
   if(p){if(qty>p.qty&&!confirm('Stock insuffisant ('+p.qty+' dispo). Enregistrer quand même ?'))return;productId=p.id;p.qty=Math.max(0,p.qty-qty);}
  }
  const desc=document.getElementById('f-desc').value.trim();
- S.tx.push({id:uid(),type:FLUX,amount:amt,cat:document.getElementById('f-cat').value,desc,date:document.getElementById('f-date').value||todayStr(),acc:document.getElementById('f-acc').value,clientId:cliId,advance:ADVFLAG||undefined,productId,qty});
+ const _txId=uid();const _txDate=document.getElementById('f-date').value||todayStr();
+ S.tx.push({id:_txId,type:FLUX,amount:amt,cat:document.getElementById('f-cat').value,desc,date:_txDate,acc:document.getElementById('f-acc').value,clientId:cliId,advance:ADVFLAG||undefined,productId,qty});
+ if(FLUX==='in')repartApply(amt,_txId,_txDate);
  if(productId){const pp=S.products.find(x=>x.id===productId);smov(productId,'out',qty,pp?(pp.price||0):0,'Vente'+(desc?' — '+desc:''));}
  log((FLUX==='in'?'Encaissement':'Décaissement')+' de '+fmt(amt)+(desc?' — '+desc:'')+(productId?' (stock mis à jour)':''));
  save();R.flux();toast('Opération enregistrée');
@@ -2224,7 +2271,7 @@ function invBuildPDF(iv){
  const t=invTotals(iv);const co=S.company;
  const c=iv.clientId?S.clients.find(x=>x.id===iv.clientId):null;
  const cliAddr=c&&c.address?c.address:'';const cliTel=iv.phone||(c&&c.phone)||'';
- const footTel=co.tel||'+221 77 695 07 36',footMail=co.email||'lesdouceursdeve@gmail.com',footSoc=co.social||'@lesdouceurs_deve';
+ const footTel=co.tel||'',footMail=co.email||'',footSoc=co.social||'';
  const doc=new window.jspdf.jsPDF();const W=210,M=16;
  let BR=[14,90,69];try{const n=(co.color||'#0E5A45').replace('#','');BR=[parseInt(n.slice(0,2),16),parseInt(n.slice(2,4),16),parseInt(n.slice(4,6),16)];}catch(e){}
  /* Barre de couleur en haut */
@@ -2298,12 +2345,14 @@ function invBuildPDF(iv){
   doc.setFont('courier','normal');doc.setFontSize(7.6);doc.setTextColor(70);
   doc.splitTextToSize(co.payCond,W-2*M).forEach(function(ln){doc.text(ln,M,y);y+=4.5;});
  }
- /* Pied de page : bande colorée */
- doc.setFillColor(BR[0],BR[1],BR[2]);doc.rect(0,283,W,14,'F');
- doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(255,255,255);
- doc.text(String(footTel),M,291);
- doc.text(String(footMail),W/2,291,{align:'center'});
- doc.text(String(footSoc),W-M,291,{align:'right'});
+ /* Pied de page : bande colorée (seulement si au moins un contact) */
+ if(footTel||footMail||footSoc){
+  doc.setFillColor(BR[0],BR[1],BR[2]);doc.rect(0,283,W,14,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(255,255,255);
+  if(footTel)doc.text(String(footTel),M,291);
+  if(footMail)doc.text(String(footMail),W/2,291,{align:'center'});
+  if(footSoc)doc.text(String(footSoc),W-M,291,{align:'right'});
+ }
  return doc;
 }
 function invPDF(id){
@@ -2328,7 +2377,7 @@ function exportJournal(){
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.journal.map(j=>({'Date':new Date(j.d).toLocaleString('fr-FR'),'Utilisateur':j.by||'','Module':(j.mod&&MODLBL[j.mod])?MODLBL[j.mod]:'','Action':j.txt}))),'Journal');
  XLSX.writeFile(wb,'journal-audit-'+todayStr()+'.xlsx');
 }
-R.set=function(){
+R.set=function(){setTimeout(()=>{if(S.settings.repartOn)renderRepartEditor();},20);
  const d=licDaysLeft();
  const email=(SESSION&&SESSION.user&&SESSION.user.email)||'';
  document.getElementById('v-set').innerHTML=`
@@ -2337,7 +2386,7 @@ R.set=function(){
   <div class="grid2"><div><label>NINEA (optionnel)</label><input id="s-ninea" value="${esc(S.company.ninea||'')}"></div><div><label>RCCM (optionnel)</label><input id="s-rccm" value="${esc(S.company.rccm||'')}"></div></div>
   <div class="grid2"><div><label>Téléphone (optionnel)</label><input id="s-tel" value="${esc(S.company.tel||'')}"></div><div><label>E-mail (optionnel)</label><input id="s-email" value="${esc(S.company.email||'')}"></div></div>
   <label>Adresse (optionnel)</label><input id="s-addr" value="${esc(S.company.address||'')}">
-  <label>Réseaux sociaux (optionnel)</label><input id="s-social" value="${esc(S.company.social||'')}" placeholder="@lesdouceurs_deve">
+  <label>Réseaux sociaux (optionnel)</label><input id="s-social" value="${esc(S.company.social||'')}" placeholder="@atelierplus">
   <label>Conditions de règlement (optionnel — bas des factures)</label><input id="s-paycond" value="${esc(S.company.payCond||'')}" placeholder="Ex. : Règlement à réception par Wave ou Orange Money">
   <label>Couleur de marque</label><div style="display:flex;gap:.6rem;align-items:center"><input id="s-color" type="color" value="${S.company.color||'#0E5A45'}" style="width:56px;height:40px;padding:2px;border-radius:10px;cursor:pointer"><span class="fine">Appliquée à l’interface et à l’entête de vos factures.</span></div>
   <p class="fine" style="margin-top:.3rem">Adresse, téléphone, e-mail et réseaux apparaissent automatiquement en entête et en pied de vos factures.</p>
@@ -2345,6 +2394,11 @@ R.set=function(){
   <label>Devise</label><select id="s-cur">${CURRENCIES.map(c=>`<option value="${c[0]}" ${S.company.currency===c[0]?'selected':''}>${c[2]} (${c[1]})</option>`).join('')}</select>
   <label>Logo</label><div style="display:flex;gap:.8rem;align-items:center"><img id="s-logo-prev" src="${S.company.logo||LOGO}" style="width:50px;height:50px;border-radius:12px;border:1px solid var(--ligne);object-fit:cover" alt=""><input type="file" accept="image/*" onchange="setLogo(this)"></div>
   <button class="btn btn-p btn-full mt" onclick="saveCompany()">Enregistrer</button></div></div>
+ <div class="card"><h2>Répartition automatique des encaissements</h2>
+  <p class="fine">Ventile automatiquement chaque encaissement selon des rubriques (Épargne, Charges…). Le total des pourcentages doit faire 100 %.</p>
+  <label style="display:flex;align-items:center;gap:.6rem;text-transform:none;font-size:.9rem"><input type="checkbox" style="width:auto" ${S.settings.repartOn?'checked':''} onchange="repartToggle(this.checked)"> Activer la répartition automatique</label>
+  <div id="repart-editor" style="display:${S.settings.repartOn?'block':'none'};margin-top:.6rem"></div>
+ </div>
  <div class="card"><h2>Licence</h2>
   <p class="fine">${S.license.trial?'Version d’essai gratuite.':'Clé : '+esc(S.license.key)}<br>Expire le <b>${new Date(S.license.expiry).toLocaleDateString('fr-FR')}</b> (${d>0?d+' jours restants':'expirée'}). La vérification s’effectue côté serveur : la date d’expiration ne peut pas être falsifiée.</p>
   <div class="adm"><label>Entrer une nouvelle clé (renouvellement)</label><input id="s-key" placeholder="TRZO-XXXX-XXXX-XXXX" style="text-transform:uppercase"><div id="s-key-msg"></div>
@@ -2888,9 +2942,9 @@ function invDocHTML(iv){
  const cliAddr=c&&c.address?c.address:'';
  const cliTel=iv.phone||(c&&c.phone)||'';
  const co=S.company;
- const socials=co.social||'@lesdouceurs_deve';
- const footTel=co.tel||'+221 77 695 07 36';
- const footMail=co.email||'lesdouceursdeve@gmail.com';
+ const socials=co.social||'';
+ const footTel=co.tel||'';
+ const footMail=co.email||'';
  const kindLabel=iv.kind==='acompte'?" — FACTURE D'ACOMPTE":iv.kind==='solde'?' — FACTURE DE SOLDE':'';
  const docTitle=(iv.proforma?'DEVIS':'FACTURE')+(co.name?' '+co.name.toUpperCase():'');
  const statusTag=invStatus(iv)==='cancel'?' — ANNULÉE':invStatus(iv)==='paid'?' — PAYÉE':invStatus(iv)==='part'?' — PARTIELLEMENT RÉGLÉE':'';
@@ -2937,11 +2991,11 @@ function invDocHTML(iv){
   <div class="inv-arrete">${esc(arrete(iv))}</div>
   ${iv.proforma?`<div class="inv-cond">Devis valable 30 jours à compter de la date d'émission. Bon pour accord (date et signature) :</div><div class="inv-sign"></div>`:(S.company.payCond?`<div class="inv-cond">${esc(S.company.payCond)}</div>`:'')}
   </div>
-  <div class="inv-eve-foot">
-   <span>☎ ${esc(footTel)}</span>
-   <span>✉ ${esc(footMail)}</span>
-   <span>${esc(socials)}</span>
-  </div>
+  ${(footTel||footMail||socials)?`<div class="inv-eve-foot">
+   ${footTel?`<span>☎ ${esc(footTel)}</span>`:''}
+   ${footMail?`<span>✉ ${esc(footMail)}</span>`:''}
+   ${socials?`<span>${esc(socials)}</span>`:''}
+  </div>`:''}
  </div>`;
 }
 function invPreview(id){
