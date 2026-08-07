@@ -45,7 +45,8 @@ header{position:sticky;top:0;z-index:40;background:var(--vert);color:var(--on-ve
  header .hname{font-size:.95rem}
  header .hsub{font-size:.62rem}
  header #hd-ex{order:5;flex:1 1 100%;min-width:0;margin-top:.15rem}
- header .btn-lock{padding:.45rem .6rem;font-size:.72rem}
+ header #btn-switch{background:var(--a,#D9A441)!important;color:#1C2420!important;font-weight:800}
+.btn-lock{padding:.45rem .6rem;font-size:.72rem}
  header #btn-lock,header #btn-logout{font-size:0;padding:.45rem .55rem}
  header #btn-lock::before{content:'🔒';font-size:.95rem}
  header #btn-logout::before{content:'⏻';font-size:.95rem}
@@ -240,6 +241,7 @@ body.readonly .ro-banner{display:block}
     <div class="hname" id="h-name">Trezo Services</div>
     <div class="hsub"><span id="h-lic"></span><span id="h-sync"></span></div>
   </div>
+  <button class="btn-lock" id="btn-switch" title="Basculer vers l'autre espace" style="display:none"></button>
   <button class="btn-lock" id="btn-refresh" title="Recharger les données depuis le cloud">⟳</button>
   <select class="btn-lock" id="hd-ex" title="Naviguer entre les exercices comptables"></select>
   <button class="btn-lock" id="btn-lock" title="Basculer le mode lecture seule">🔒 Verrouiller</button>
@@ -391,6 +393,18 @@ function renderHeader(){
  if(S.license)el.textContent=(S.license.trial?'Essai — ':'Licence — ')+(d>0?d+' j restants':'expirée');
  document.body.classList.toggle('readonly',!!S.settings.readOnly);
  document.getElementById('btn-lock').textContent=S.settings.readOnly?'🔓 Déverrouiller':'🔒 Verrouiller';
+ renderSwitchBtn();
+}
+function renderSwitchBtn(){
+ const b=document.getElementById('btn-switch');if(!b)return;
+ const other=trezoEdition()==='commerce'?'services':'commerce';
+ const os=(MEMS||[]).filter(m=>((m.companies.edition)||'commerce')===other);
+ if(os.length){
+   b.style.display='';
+   b.textContent='⇄ '+editionLabel(other);
+   b.title='Basculer vers votre espace '+editionLabel(other);
+   b.onclick=function(){goToSpace(os[0].company_id,other);};
+ }else{b.style.display='none';}
 }
 document.getElementById('btn-lock').onclick=async function(){
  if(!COMPANY)return;
