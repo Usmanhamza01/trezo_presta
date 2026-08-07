@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trezo Presta — Gestion des prestations</title>
+<title>Trezo Services — Gestion des prestations</title>
 <meta name="description" content="Gestion de trésorerie pour PME : encaissements, décaissements, salaires, stocks, factures.">
 <meta name="theme-color" content="#0E5A45">
 <link rel="manifest" href="manifest.webmanifest">
@@ -237,7 +237,7 @@ body.readonly .ro-banner{display:block}
 <header>
   <img class="hlogo" id="h-logo" alt="" src="icon-192.png">
   <div style="flex:1;min-width:0">
-    <div class="hname" id="h-name">Trezo Presta</div>
+    <div class="hname" id="h-name">Trezo Services</div>
     <div class="hsub"><span id="h-lic"></span><span id="h-sync"></span></div>
   </div>
   <button class="btn-lock" id="btn-refresh" title="Recharger les données depuis le cloud">⟳</button>
@@ -278,7 +278,7 @@ body.readonly .ro-banner{display:block}
 
 <script>
 'use strict';
-/* ===== Trezo Presta v1 — cœur ===== */
+/* ===== Trezo Services v1 — cœur ===== */
 const CONFIG=window.TREZO_CONFIG||{};
 const CURRENCIES=[["XOF","FCFA","Franc CFA (UEMOA)"],["XAF","FCFA","Franc CFA (CEMAC)"],["MAD","DH","Dirham marocain"],["TND","DT","Dinar tunisien"],["DZD","DA","Dinar algérien"],["EGP","E£","Livre égyptienne"],["NGN","₦","Naira nigérian"],["GHS","GH₵","Cedi ghanéen"],["KES","KSh","Shilling kényan"],["TZS","TSh","Shilling tanzanien"],["UGX","USh","Shilling ougandais"],["RWF","FRw","Franc rwandais"],["GNF","FG","Franc guinéen"],["CDF","FC","Franc congolais"],["MRU","UM","Ouguiya mauritanien"],["ZAR","R","Rand sud-africain"],["ETB","Br","Birr éthiopien"],["USD","$","Dollar US"],["EUR","€","Euro"]];
 const CAT_IN=["Prestations de services","Avance client","Remboursement","Apport","Autre"];
@@ -374,7 +374,7 @@ function renderNav(){
  const bottom=[["dash","Tableau"],["flux","Flux"],["fact","Factures"],["presta","Prestations"]];
  document.getElementById('bnav').innerHTML=bottom.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('')+'<button onclick="openSheet(\'sheet-plus\')">'+IC.plus+'Plus</button>';
  document.getElementById('plus-items').innerHTML=[["cli","Clients"],["proj","Projets"],["sal","Charges fixes"],["obj","Objectifs"],["jour","Journal"],["set","Réglages"]].filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button class="menu-it" onclick="closeSheet(\'sheet-plus\');go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
- document.getElementById('side').innerHTML='<div class="slogo"><img src="'+LOGO+'" alt="" style="width:34px;height:34px;border-radius:9px">Trezo Presta</div>'+VIEWS.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
+ document.getElementById('side').innerHTML='<div class="slogo"><img src="'+LOGO+'" alt="" style="width:34px;height:34px;border-radius:9px">Trezo Services</div>'+VIEWS.filter(function(it){return permOf(it[0])!=='n';}).map(function(it){return '<button data-v="'+it[0]+'" onclick="go(\''+it[0]+'\')">'+IC[it[0]]+it[1]+'</button>';}).join('');
 }
 function go(v){CUR=v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));const el=document.getElementById('v-'+v);el.classList.add('on');document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
  const p=permOf(v);
@@ -385,7 +385,7 @@ function go(v){CUR=v;document.querySelectorAll('.view').forEach(x=>x.classList.r
 
 /* ===== En-tête + verrou lecture seule ===== */
 function renderHeader(){
- document.getElementById('h-name').textContent=S.company.name||'Trezo Presta';
+ document.getElementById('h-name').textContent=S.company.name||'Trezo Services';
  document.getElementById('h-logo').src=S.company.logo||LOGO;
  const d=licDaysLeft(),el=document.getElementById('h-lic');
  if(S.license)el.textContent=(S.license.trial?'Essai — ':'Licence — ')+(d>0?d+' j restants':'expirée');
@@ -419,14 +419,14 @@ document.getElementById('btn-refresh').onclick=async function(){
   setSync(' · ✓ synchronisé');toast('Données actualisées');
  }catch(e){setSync(' · hors ligne');toast('Actualisation impossible — vérifiez la connexion');}
 };
-document.getElementById('btn-logout').onclick=function(){if(confirm('Se déconnecter de Trezo Presta ?'))cloudSignOut();};
+document.getElementById('btn-logout').onclick=function(){if(confirm('Se déconnecter de Trezo Services ?'))cloudSignOut();};
 document.getElementById('hd-ex').onchange=function(){EXY=+this.value;renderExSel();if(R[CUR])R[CUR]();toast(exClosed(EXY)?'Exercice '+EXY+' (clôturé) — consultation en lecture seule':'Exercice '+EXY);};
 
 function permOf(v){if(MYROLE==='owner'||!PERMS||!PERMS.m)return't';return PERMS.m[v]||'t';}
 
 /* ===== Écrans d'accès ===== */
 let OB={products:[]};
-function obHTML(inner,step){return '<div class="ob-logo"><img src="'+LOGO+'" alt="" style="width:52px;height:52px;border-radius:14px"><div><div style="font-weight:800;font-size:1.5rem">Trezo Presta</div><div style="font-size:.85rem;opacity:.8">La gestion de vos prestations et projets</div></div></div><div class="steps">'+[0,1,2,3].map(i=>'<i class="'+(i<=step?'on':'')+'"></i>').join('')+'</div><div class="panel">'+inner+'</div>';}
+function obHTML(inner,step){return '<div class="ob-logo"><img src="'+LOGO+'" alt="" style="width:52px;height:52px;border-radius:14px"><div><div style="font-weight:800;font-size:1.5rem">Trezo Services</div><div style="font-size:.85rem;opacity:.8">La gestion de vos prestations et projets</div></div></div><div class="steps">'+[0,1,2,3].map(i=>'<i class="'+(i<=step?'on':'')+'"></i>').join('')+'</div><div class="panel">'+inner+'</div>';}
 function obShow(inner,step){document.getElementById('ob').classList.add('open');document.getElementById('ob-body').innerHTML=obHTML(inner,step);}
 function authErr(e){
  const m=String((e&&e.message)||e||'');
@@ -442,7 +442,7 @@ function authErr(e){
  if(m.indexOf('not_owner')>=0)return 'Action réservée à l’administrateur.';
  if(m.indexOf('cannot_edit_owner')>=0)return 'Le compte administrateur ne peut pas être modifié.';
  if(m.indexOf('read_only_profile')>=0)return 'Votre profil est en lecture seule.';
- if(m.indexOf('suspended')>=0)return 'Licence suspendue — contactez votre fournisseur Trezo Presta.';
+ if(m.indexOf('suspended')>=0)return 'Licence suspendue — contactez votre fournisseur Trezo Services.';
  if(m.indexOf('Failed to fetch')>=0||m.indexOf('NetworkError')>=0)return 'Connexion Internet requise — vérifiez votre réseau.';
  return 'Erreur : '+m;
 }
@@ -515,18 +515,44 @@ async function loadWorkspace(){
  if(r.error){obFail(r.error);return;}
  if(!r.data||!r.data.length){showCompanySetup();return;}
  MEMS=r.data;
- let mem=r.data[0];
- if(r.data.length>1){
+ try{const qc=new URLSearchParams(location.search).get('company');if(qc){localStorage.setItem('trezo_company',qc);history.replaceState(null,'',location.pathname);}}catch(e){}
+ const myEd=trezoEdition();
+ const mine=r.data.filter(x=>((x.companies.edition)||'commerce')===myEd);
+ if(!mine.length){showNoSpaceHere(r.data,myEd);return;}
+ let mem=mine[0];
+ if(mine.length>1){
   const saved=localStorage.getItem('trezo_company');
-  const f=r.data.find(x=>x.company_id===saved);
+  const f=mine.find(x=>x.company_id===saved);
   if(f)mem=f;else{showCompanyPicker();return;}
+ }else{
+  const saved=localStorage.getItem('trezo_company');
+  const f=mine.find(x=>x.company_id===saved);if(f)mem=f;
  }
  enterCompany(mem);
+}
+function showNoSpaceHere(all,myEd){
+ const other=myEd==='commerce'?'services':'commerce';
+ const otherOnes=all.filter(x=>((x.companies.edition)||'commerce')===other);
+ obShow(`<h2>Espace ${editionLabel(myEd)}</h2>
+  <p class="fine">Votre compte n'a pas encore d'entreprise dans l'espace ${editionLabel(myEd)}.</p>
+  ${otherOnes.length?`<p class="fine">Vous avez ${otherOnes.length} entreprise(s) dans l'espace ${editionLabel(other)} :</p>${otherOnes.map(m=>`<button class="btn btn-o btn-full mt" onclick="goToSpace('${m.company_id}','${other}')">${esc(m.companies.name)}${editionBadge(other)} ↗</button>`).join('')}`:''}
+  <button class="btn btn-p btn-full mt" onclick="showCompanySetup()">Créer une entreprise ${editionLabel(myEd)} ici</button>
+  <button class="btn btn-full mt" style="color:var(--gris)" onclick="cloudSignOut()">Se déconnecter</button>`,1);
+}
+function trezoEdition(){return (window.TREZO_CONFIG&&window.TREZO_CONFIG.edition)||'commerce';}
+function spaceURL(edition){const cfg=window.TREZO_CONFIG||{};return edition==='services'?(cfg.urlServices||''):(cfg.urlCommerce||'');}
+function editionLabel(ed){return ed==='services'?'Services':'Commerce';}
+function editionBadge(ed){const c=ed==='services'?'#C16A54':'#0E5A45';return `<span style="display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff;background:${c};border-radius:20px;padding:2px 9px;vertical-align:middle;margin-left:.4rem">${editionLabel(ed)}</span>`;}
+function goToSpace(companyId,edition){
+ const url=spaceURL(edition);
+ localStorage.setItem('trezo_company',companyId);
+ if(url){location.href=url.replace(/\/$/,'')+'/?company='+encodeURIComponent(companyId);}
+ else{toast("L'espace "+editionLabel(edition)+" n'est pas encore configuré (URL manquante dans config.js).");}
 }
 function showCompanyPicker(){
  obShow(`<h2>Choisissez une entreprise</h2>
  <p class="fine">Votre compte est rattaché à ${MEMS.length} entreprises. Sélectionnez celle sur laquelle travailler — vous pourrez changer à tout moment depuis Réglages.</p>
- ${MEMS.map((m,i)=>`<button class="btn btn-o btn-full mt" onclick="pickCompany(${i})">${esc(m.companies.name)}${m.role==='owner'?' — administrateur':''}</button>`).join('')}
+ ${MEMS.map((m,i)=>{const ed=(m.companies.edition)||'commerce';const here=ed===trezoEdition();return `<button class="btn btn-o btn-full mt" onclick="${here?`pickCompany(${i})`:`goToSpace('${m.company_id}','${ed}')`}">${esc(m.companies.name)}${editionBadge(ed)}${m.role==='owner'?' <span class="fine">— admin</span>':''}${here?'':' <span class="fine">↗</span>'}</button>`;}).join('')}
  <button class="btn btn-full mt" style="color:var(--gris)" onclick="cloudSignOut()">Se déconnecter</button>`,1);
 }
 function pickCompany(i){
@@ -614,7 +640,7 @@ function obFinish(){
  S.products=OB.products;S.company.logo=OB.logo||null;
  S.accounts=[{id:'a_caisse',name:'Caisse'},{id:'a_banque',name:'Banque'},{id:'a_om',name:'Orange Money'},{id:'a_wave',name:'Wave'}];
  S.settings.invPrefix=initialsOf(S.company.name);
- log('Espace Trezo Presta configuré pour '+S.company.name);
+ log('Espace Trezo Services configuré pour '+S.company.name);
  save();
  document.getElementById('ob').classList.remove('open');
  initApp();
@@ -2407,7 +2433,7 @@ R.set=function(){setTimeout(()=>{if(S.settings.repartOn)renderRepartEditor();},2
   <p class="fine">Invitez vos collaborateurs et définissez leurs droits module par module : <b>Aucun accès</b>, <b>Lecture seule</b>, <b>Écriture</b> (créer &amp; modifier, sans supprimer) ou <b>Total</b>.</p>
   <div id="mem-list" class="fine">Chargement…</div>
   <div class="grid2 mt adm"><button class="btn btn-p" onclick="newUserOpen()">+ Créer un compte</button><button class="btn btn-o" onclick="invitOpen()">Inviter par code</button></div></div>`:''}
- <div class="card"><h2>Compte</h2>${MEMS.length>1?`<button class="btn btn-o btn-full" style="margin:.4rem 0 .6rem" onclick="switchCompany()">⇄ Changer d’entreprise (${MEMS.length} rattachées)</button>`:''}
+ <div class="card"><h2>Compte</h2>${(function(){const other=trezoEdition()==='commerce'?'services':'commerce';const os=(MEMS||[]).filter(m=>((m.companies.edition)||'commerce')===other);if(!os.length)return'';return `<button class="btn btn-p btn-full" style="margin:.4rem 0 .6rem" onclick="goToSpace('${os[0].company_id}','${other}')">↗ Aller à mon espace ${editionLabel(other)}</button>`;})()}${MEMS.length>1?`<button class="btn btn-o btn-full" style="margin:.4rem 0 .6rem" onclick="switchCompany()">⇄ Changer d’entreprise (${MEMS.length} rattachées)</button>`:''}
   <p class="fine">Connecté : <b>${esc(email)}</b>. Vos données sont synchronisées dans le cloud et accessibles depuis n’importe quel appareil avec cet identifiant.</p>
   <div class="grid2 mt"><button class="btn btn-o adm" onclick="cloudChangePass()">Changer le mot de passe</button><button class="btn btn-o" onclick="cloudSignOut()">Se déconnecter</button></div></div>
  <div class="card"><h2>Exercices comptables</h2>
@@ -2423,7 +2449,7 @@ R.set=function(){setTimeout(()=>{if(S.settings.repartOn)renderRepartEditor();},2
   <p class="fine">Le mode lecture seule (bouton 🔒 en haut) permet de confier l’appareil à un employé ou de montrer les chiffres à un client sans risque de modification. Le code PIN protège le déverrouillage.</p>
   <button class="btn btn-o btn-full mt adm" onclick="setPin()">${S.settings.pin?'Changer le code PIN':'Définir un code PIN'}</button></div>
  <div class="card"><h2>Application</h2>
-  <p class="fine">Installez Trezo Presta sur cet appareil pour l’ouvrir comme un logiciel, directement depuis l’écran d’accueil ou le bureau.</p>
+  <p class="fine">Installez Trezo Services sur cet appareil pour l’ouvrir comme un logiciel, directement depuis l’écran d’accueil ou le bureau.</p>
   <button class="btn btn-o btn-full mt" onclick="promptInstall()">Installer sur cet appareil</button></div>
  <div class="card"><h2>Données</h2>
   <button class="btn btn-p btn-full" onclick="exportExcel()">Exporter en Excel (.xlsx)</button>
@@ -2431,7 +2457,7 @@ R.set=function(){setTimeout(()=>{if(S.settings.repartOn)renderRepartEditor();},2
   <label class="mt adm" style="display:block;margin-top:1rem"><span class="btn btn-o btn-full" style="display:flex">Importer une sauvegarde (migration)</span><input type="file" accept=".json,application/json" style="display:none" onchange="restore(this)"></label>
   <p class="fine mt">La sauvegarde cloud est automatique. L’archive JSON sert de copie personnelle et permet de migrer les données d’une installation Trezo Classique vers le cloud.</p>
   <button class="btn btn-d btn-full mt adm act-del" onclick="resetAll()">Vider les données de l’entreprise</button></div>
- <p class="fine" style="text-align:center;margin:.4rem 0 1.2rem">Trezo Presta — un produit Trezo</p>`;
+ <p class="fine" style="text-align:center;margin:.4rem 0 1.2rem">Trezo Services — un produit Trezo</p>`;
  if(MYROLE==='owner')loadMembers();
 };
 function setLogo(inp){const f=inp.files[0];if(!f)return;resizeImg(f,url=>{S.company.logo=url;document.getElementById('s-logo-prev').src=url;save();renderHeader();toast('Logo mis à jour');});}
@@ -3540,7 +3566,7 @@ function monthlyReport(){
    doc.setPage(i);
    doc.setDrawColor(231,226,216);doc.line(L,286,Rt,286);
    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(150,145,135);
-   doc.text(String(S.company.name).slice(0,40)+' — rapport généré avec Trezo Presta',L,291);
+   doc.text(String(S.company.name).slice(0,40)+' — rapport généré avec Trezo Services',L,291);
    doc.text('Page '+i+' / '+np,Rt,291,{align:'right'});
   }
   doc.save('rapport-'+m+'.pdf');

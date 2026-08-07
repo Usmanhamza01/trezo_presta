@@ -1,6 +1,6 @@
 {
-  "name": "Trezo Presta",
-  "short_name": "Presta",
+  "name": "Trezo Services — Gestion des prestations",
+  "short_name": "Services",
   "description": "Gestion de trésorerie pour PME, synchronisée dans le cloud : encaissements, décaissements, salaires, stocks, factures.",
   "lang": "fr",
   "start_url": "./",
