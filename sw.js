@@ -1,5 +1,5 @@
 /* Trezo Cloud — SW : réseau d'abord pour la page/config (mises à jour immédiates), cache pour les librairies. API Supabase jamais mise en cache. */
-const CACHE = 'trezo-presta-v19';
+const CACHE = 'trezo-presta-v20';
 const ASSETS = [
   './', './index.html', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   'https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap',

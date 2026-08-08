@@ -558,10 +558,22 @@ function spaceURL(edition){const cfg=window.TREZO_CONFIG||{};return edition==='s
 function editionLabel(ed){return ed==='services'?'Services':'Commerce';}
 function editionBadge(ed){const c=ed==='services'?'#C16A54':'#0E5A45';return `<span style="display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff;background:${c};border-radius:20px;padding:2px 9px;vertical-align:middle;margin-left:.4rem">${editionLabel(ed)}</span>`;}
 function goToSpace(companyId,edition){
- const url=spaceURL(edition);
  localStorage.setItem('trezo_company',companyId);
+ // Si l'entreprise est de la MÊME édition que cette app : on l'ouvre ici, pas de redirection.
+ if(edition===trezoEdition()){
+   const m=(MEMS||[]).find(x=>x.company_id===companyId);
+   if(m){enterCompany(m);return;}
+   location.href=location.pathname+'?company='+encodeURIComponent(companyId);return;
+ }
+ const url=spaceURL(edition);
  if(url){location.href=url.replace(/\/$/,'')+'/?company='+encodeURIComponent(companyId);}
- else{toast("L'espace "+editionLabel(edition)+" n'est pas encore configuré (URL manquante dans config.js).");}
+ else{
+   // URL de l'autre espace non configurée : message clair et bloquant plutôt qu'un toast fugace.
+   obShow(`<h2>Espace ${editionLabel(edition)} — à configurer</h2>
+    <p class="fine">Cette entreprise se trouve dans l'espace <b>${editionLabel(edition)}</b>, mais l'adresse de cet espace n'a pas encore été renseignée dans la configuration de l'application (champ <b>${edition==='services'?'urlServices':'urlCommerce'}</b>).</p>
+    <p class="fine">Ouvrez directement l'application ${editionLabel(edition)} pour accéder à cette entreprise, ou demandez à votre prestataire de compléter la configuration.</p>
+    <button class="btn btn-full mt" style="color:var(--gris)" onclick="location.reload()">Retour</button>`,1);
+ }
 }
 function showCompanyPicker(){
  obShow(`<h2>Choisissez une entreprise</h2>
