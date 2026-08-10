@@ -13,4 +13,3 @@ window.TREZO_CONFIG = {
   urlCommerce: "https://trezo-cloud.pages.dev/",
   urlServices: "https://trezo-presta.pages.dev/"
 };
-

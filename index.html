@@ -543,6 +543,7 @@ async function loadWorkspace(){
   const f=mine.find(x=>x.company_id===saved);if(f)mem=f;
  }
  enterCompany(mem);
+ if(typeof renderSwitchBtn==='function')renderSwitchBtn();
 }
 function showNoSpaceHere(all,myEd){
  const other=myEd==='commerce'?'services':'commerce';
